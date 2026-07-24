@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Qaytnoma — Bento Uslubidagi Qaydlar Daftari",
+  title: "Qaydnoma — Bento Uslubidagi Qaydlar Daftari",
   description: "Bento uslubida yozilgan zamonaviy, tezkor va interaktiv qayd daftari",
 };
 

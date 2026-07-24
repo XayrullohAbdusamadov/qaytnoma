@@ -20,7 +20,8 @@ import {
   Copy,
   Send,
   Globe,
-  RotateCcw
+  RotateCcw,
+  Bookmark
 } from 'lucide-react';
 
 interface QaytnomaItem {
@@ -309,7 +310,12 @@ export default function Home() {
         <header className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 fade-in">
           <div>
             <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-white flex items-center gap-3">
-              Qaytnoma
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500 p-0.5 shadow-lg shadow-rose-500/20">
+                <div className="w-full h-full bg-zinc-950 rounded-[14px] flex items-center justify-center text-rose-400">
+                  <Bookmark size={22} className="fill-rose-500/20" />
+                </div>
+              </div>
+              <span>Qaydnoma</span>
             </h1>
             <p className="text-gray-400 max-w-xl text-sm">
               Bento uslubidagi zamonaviy eslatmalar va qaydlar daftari. Real-time saqlash va linklar ulashish tizimi.
@@ -754,6 +760,29 @@ export default function Home() {
             ))}
           </div>
         )}
+
+        {/* Footer */}
+        <footer className="mt-20 pt-8 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400">
+          <div className="flex items-center gap-2 font-semibold text-white">
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-black shadow-md">
+              <Bookmark size={14} className="fill-black" />
+            </div>
+            <span className="text-sm tracking-tight font-extrabold">Qaydnoma</span>
+            <span className="text-gray-600">•</span>
+            <span className="text-gray-400 font-normal">Yaratuvchi: <strong className="text-gray-200">Hayrulloh Abdusamadov</strong></span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <a
+              href="https://t.me/HayrullohAdusamadov"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:text-blue-300 hover:border-blue-500/60 font-medium transition-all shadow-sm hover:scale-105 active:scale-95"
+            >
+              <Send size={12} /> Telegram kanal: @HayrullohAdusamadov
+            </a>
+          </div>
+        </footer>
 
       </main>
 
