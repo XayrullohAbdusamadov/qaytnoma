@@ -19,7 +19,8 @@ import {
   Share2,
   Copy,
   Send,
-  Globe
+  Globe,
+  RotateCcw
 } from 'lucide-react';
 
 interface QaytnomaItem {
@@ -98,7 +99,7 @@ export default function Home() {
       if (error) throw error;
 
       // Copy the dynamic vercel share link
-      const link = `${window.location.origin}/share/${data.id}`;
+      const link = `https://qaydnoma-six.vercel.app/share/${data.id}`;
       await navigator.clipboard.writeText(link);
 
       setCopiedItemId(item.id);
@@ -210,7 +211,7 @@ export default function Home() {
 
       if (error) throw error;
 
-      const link = `${window.location.origin}/share/${data.id}`;
+      const link = `https://qaydnoma-six.vercel.app/share/${data.id}`;
       setGeneratedShareUrl(link);
     } catch (err) {
       console.error('Share error:', err);
@@ -316,30 +317,30 @@ export default function Home() {
           </div>
 
           {/* Vercel Live Link Block */}
-          <div className="bg-zinc-900/90 border border-zinc-700/80 rounded-2xl p-4 flex items-center gap-3 shadow-xl backdrop-blur-md">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold">
+          <div className="bg-zinc-900/80 border border-zinc-700/80 hover:border-emerald-500/50 rounded-2xl p-4 flex items-center gap-3 shadow-xl backdrop-blur-xl transition-all duration-300">
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold shadow-inner">
               ▲
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]"></span>
                 <span className="text-[10px] font-bold tracking-wider text-emerald-400 uppercase">Vercel Live</span>
               </div>
               <a
                 href={vercelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-mono font-semibold text-white hover:text-blue-400 transition-colors flex items-center gap-1"
+                className="text-xs font-mono font-semibold text-white hover:text-emerald-400 transition-colors flex items-center gap-1"
               >
-                qaytnoma.vercel.app <ExternalLink size={11} />
+                qaydnoma-six.vercel.app <ExternalLink size={11} />
               </a>
             </div>
             <button
               onClick={copyVercelLink}
-              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-gray-300 transition-all text-xs flex items-center gap-1 border border-zinc-700"
+              className="p-2 rounded-xl bg-zinc-800/80 hover:bg-emerald-500 hover:text-black text-gray-300 transition-all text-xs flex items-center gap-1 border border-zinc-700/80 font-semibold"
               title="Vercel linkini nusxalash"
             >
-              {copiedVercel ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              {copiedVercel ? <Check size={14} className="text-black" /> : <Copy size={14} />}
             </button>
           </div>
         </header>
@@ -434,15 +435,21 @@ export default function Home() {
                 <div className="flex gap-2">
                   <button
                     onClick={copyShareLink}
-                    className="flex-1 py-1.5 rounded-lg bg-rose-500 text-black font-bold text-xs flex items-center justify-center gap-1"
+                    className="flex-1 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
                   >
-                    {copiedShare ? 'Nusxalandi!' : <><Copy size={12} /> Nusxalash</>}
+                    {copiedShare ? <><Check size={14} /> Nusxalandi!</> : <><Copy size={14} /> Nusxalash</>}
                   </button>
                   <button
-                    onClick={() => setGeneratedShareUrl(null)}
-                    className="px-3 py-1.5 rounded-lg border border-zinc-700 text-xs text-gray-400 hover:text-white"
+                    onClick={() => {
+                      setGeneratedShareUrl(null);
+                      setShareTitle('');
+                      setShareContent('');
+                      setShareSender('');
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/80 text-xs font-semibold text-gray-300 hover:text-white flex items-center gap-1.5 transition-all active:scale-95"
+                    title="Formani tozalash"
                   >
-                    Yangi
+                    <RotateCcw size={13} /> Tozalash
                   </button>
                 </div>
               </div>
@@ -464,13 +471,25 @@ export default function Home() {
                   onChange={(e) => setShareContent(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
                 />
-                <button
-                  type="submit"
-                  disabled={isSharing || !shareTitle.trim() || !shareContent.trim()}
-                  className="w-full py-2 bg-rose-500 hover:bg-rose-600 font-bold text-black text-xs rounded-lg flex items-center justify-center gap-1 transition-all disabled:opacity-50"
-                >
-                  {isSharing ? 'Yaratilmoqda...' : <><Send size={12} /> Link Yaratish</>}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={isSharing || !shareTitle.trim() || !shareContent.trim()}
+                    className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 font-bold text-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isSharing ? 'Yaratilmoqda...' : <><Send size={12} /> Link Yaratish</>}
+                  </button>
+                  {(shareTitle || shareContent) && (
+                    <button
+                      type="button"
+                      onClick={() => { setShareTitle(''); setShareContent(''); setShareSender(''); }}
+                      className="px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/80 text-gray-300 hover:text-white rounded-xl text-xs flex items-center justify-center gap-1 font-medium transition-all"
+                      title="Tozalash"
+                    >
+                      <RotateCcw size={13} />
+                    </button>
+                  )}
+                </div>
               </form>
             )}
           </div>
@@ -622,12 +641,6 @@ export default function Home() {
           <h2 className="text-2xl font-extrabold text-white tracking-tight">
             Saqlangan Qaydlar
           </h2>
-          <a
-            href="/share"
-            className="text-xs font-semibold text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1 bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-xl"
-          >
-            <Share2 size={13} /> Link Orqali Ulashish (/share)
-          </a>
         </div>
 
         {/* Notes Bento List Grid */}
@@ -659,18 +672,24 @@ export default function Home() {
                     {/* Share Card Button */}
                     <button
                       onClick={() => handleShareCard(item)}
-                      className={`p-1.5 border rounded-lg transition-all ${
+                      className={`px-2.5 py-1 border rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                         copiedItemId === item.id 
-                          ? 'bg-emerald-500 border-emerald-500 text-black' 
-                          : 'border-zinc-700 hover:border-rose-500 text-gray-400 hover:text-rose-400'
+                          ? 'bg-emerald-500 border-emerald-500 text-black font-bold' 
+                          : 'bg-zinc-900/80 border-zinc-700 hover:border-rose-500 text-gray-300 hover:text-white'
                       }`}
                       title={copiedItemId === item.id ? "Nusxalandi!" : "Vercel Share link yaratish va nusxalash"}
                       disabled={sharingItemId === item.id}
                     >
                       {copiedItemId === item.id ? (
-                        <Check size={14} />
+                        <>
+                          <Check size={12} />
+                          <span>Nusxalandi!</span>
+                        </>
                       ) : (
-                        <Share2 size={14} className={sharingItemId === item.id ? 'animate-spin' : ''} />
+                        <>
+                          <Share2 size={12} className={sharingItemId === item.id ? 'animate-spin' : ''} />
+                          <span>Link olish</span>
+                        </>
                       )}
                     </button>
 
