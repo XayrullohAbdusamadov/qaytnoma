@@ -199,22 +199,39 @@ export default function SharePage() {
 
             {/* Generated Link */}
             <div className="mb-6">
-              <label className="block text-xs font-medium text-gray-400 mb-2">Ulashish havolasi</label>
-              <div className="flex gap-2">
-                <div className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-xs text-gray-300 font-mono overflow-hidden text-ellipsis whitespace-nowrap">
-                  {generatedLink}
-                </div>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
-                  style={{
-                    backgroundColor: copied ? '#10b981' : cfg.color,
-                    color: '#09090b'
-                  }}
-                >
-                  {copied ? <><Check size={14} /> Nusxalandi</> : <><Copy size={14} /> Nusxalash</>}
-                </button>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-bold text-gray-400">Ulashish havolasi</label>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 font-mono">Qisqartirilgan</span>
               </div>
+              <div 
+                onClick={handleCopy}
+                className="group relative bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 transition-all duration-200 cursor-pointer shadow-inner flex items-center justify-between gap-4"
+                title="Nusxalash uchun bosing"
+              >
+                <div className="min-w-0 flex-1">
+                  <div 
+                    className="text-base font-mono font-bold truncate tracking-wide"
+                    style={{ color: cfg.color }}
+                  >
+                    {generatedLink}
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-zinc-950 group-hover:bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors border border-zinc-800 flex-shrink-0 shadow-sm">
+                  {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
+                </div>
+              </div>
+
+              <button
+                onClick={handleCopy}
+                className="w-full mt-4 flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-lg"
+                style={{
+                  backgroundColor: copied ? '#10b981' : cfg.color,
+                  color: '#09090b',
+                  boxShadow: copied ? '0 10px 15px -3px rgba(16, 185, 129, 0.1)' : `0 10px 15px -3px ${cfg.color}15`
+                }}
+              >
+                {copied ? <><Check size={16} className="stroke-[3px]" /> Havola nusxalandi!</> : <><Copy size={16} /> Havolani nusxalash</>}
+              </button>
             </div>
 
             {/* Preview Card */}

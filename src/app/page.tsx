@@ -523,19 +523,53 @@ export default function Home() {
             </div>
 
             {generatedShareUrl ? (
-              <div className="space-y-2 mt-3">
-                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                  <Check size={14} /> Link tayyor!
-                </p>
-                <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-[11px] font-mono text-gray-300 truncate">
-                  {generatedShareUrl}
+              <div className="space-y-4 mt-3 fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-450 animate-pulse shadow-[0_0_8px_#10b981]"></span>
+                    Link tayyor!
+                  </span>
+                  <span className="text-[9px] uppercase font-mono tracking-wider text-zinc-500 font-extrabold">
+                    Qisqa Havola
+                  </span>
                 </div>
+
+                <div 
+                  onClick={copyShareLink}
+                  className="group relative bg-zinc-950 hover:bg-zinc-900 border border-zinc-850 hover:border-rose-500/40 rounded-xl p-3.5 transition-all duration-200 cursor-pointer shadow-inner flex items-center justify-between gap-3"
+                  title="Nusxalash uchun bosing"
+                >
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block mb-0.5">Havola manzili</span>
+                    <div className="text-sm font-mono font-bold text-rose-400 truncate tracking-wide">
+                      {generatedShareUrl}
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-zinc-900 group-hover:bg-rose-500/10 flex items-center justify-center text-zinc-400 group-hover:text-rose-400 transition-colors border border-zinc-800 group-hover:border-rose-500/20 flex-shrink-0 shadow-sm">
+                    {copiedShare ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                  </div>
+                </div>
+
                 <div className="flex gap-2">
                   <button
                     onClick={copyShareLink}
-                    className="flex-1 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-black font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
+                    className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${
+                      copiedShare 
+                        ? 'bg-emerald-500 text-black shadow-emerald-500/10' 
+                        : 'bg-rose-500 hover:bg-rose-600 text-black'
+                    }`}
                   >
-                    {copiedShare ? <><Check size={14} /> Nusxalandi!</> : <><Copy size={14} /> Nusxalash</>}
+                    {copiedShare ? (
+                      <>
+                        <Check size={14} className="stroke-[3px]" />
+                        <span>Nusxalandi!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} />
+                        <span>Nusxalash</span>
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={() => {
@@ -544,10 +578,11 @@ export default function Home() {
                       setShareContent('');
                       setShareSender('');
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/80 text-xs font-semibold text-gray-300 hover:text-white flex items-center gap-1.5 transition-all active:scale-95"
-                    title="Formani tozalash"
+                    className="px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs font-bold text-zinc-400 hover:text-white flex items-center gap-1 transition-all active:scale-95"
+                    title="Yangi havola yaratish"
                   >
-                    <RotateCcw size={13} /> Tozalash
+                    <RotateCcw size={13} />
+                    <span>Qayta</span>
                   </button>
                 </div>
               </div>
