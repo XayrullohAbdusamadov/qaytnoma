@@ -443,15 +443,12 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Bento Grid Layout */}
-        {/* Bento Grid Layout (2-Column Masonry Style) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Bento Grid Layout (Symmetric Row Style) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           
-          {/* Left Column (spans 7 cols on desktop) */}
-          <div className="lg:col-span-7 flex flex-col gap-5">
-            
-            {/* Card 4: Yangi Qayd Qo'shish Form */}
-            <div className="bento-card p-6 fade-in w-full">
+          {/* Card 4: Yangi Qayd Qo'shish Form */}
+          <div className="bento-card col-span-12 lg:col-span-7 p-6 fade-in flex flex-col justify-between">
+            <div>
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Plus size={18} /> Yangi Qayd Qo'shish
               </h2>
@@ -641,76 +638,11 @@ export default function Home() {
                 </div>
               </form>
             </div>
-
-            {/* Card 1: Bu nima qiladi? */}
-            <div className="bento-card p-6 min-h-[170px] fade-in w-full">
-              <div>
-                <div className="icon-badge" style={{ '--badge-color': '#10b981' } as React.CSSProperties}>
-                  <Info size={20} />
-                </div>
-                <h2 className="text-lg font-bold text-white mb-2">Bu nima qiladi?</h2>
-                <p className="text-gray-400 text-xs leading-relaxed">
-                  Qaytnoma orqali matnlar, rasmlar va havolalarni Bento uslubida vizual saqlashingiz va Telegram/Emaildan foydalanmasdan maxsus link orqali ulashingiz mumkin.
-                </p>
-              </div>
-              <div className="text-[10px] text-gray-500 mt-4 font-mono">
-                ★ Premium Vizual Layout • Direct Link Share
-              </div>
-            </div>
-
           </div>
 
-          {/* Right Column (spans 5 cols on desktop) */}
-          <div className="lg:col-span-5 flex flex-col gap-5">
-            
-            {/* Card 2: So'rovnoma */}
-            <div className="bento-card p-6 fade-in w-full" style={{ animationDelay: '0.1s' }}>
-              <div>
-                <div className="icon-badge" style={{ '--badge-color': '#a855f7' } as React.CSSProperties}>
-                  <Sliders size={20} />
-                </div>
-                <h2 className="text-lg font-bold text-white mb-1">So'rovnoma</h2>
-                <p className="text-gray-400 text-xs mb-3">
-                  Nimalarni saqlamoqchisiz? Kerakli turlarni belgilang:
-                </p>
-                
-                <div className="flex flex-wrap gap-2">
-                  <button 
-                    onClick={() => saveSurvey({ ...survey, text: !survey.text })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
-                      survey.text 
-                        ? 'bg-amber-500/10 border-amber-500/50 text-amber-400' 
-                        : 'bg-zinc-800 border-zinc-700 text-gray-400'
-                    }`}
-                  >
-                    <FileText size={13} /> Matn
-                  </button>
-                  <button 
-                    onClick={() => saveSurvey({ ...survey, image: !survey.image })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
-                      survey.image 
-                        ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' 
-                        : 'bg-zinc-800 border-zinc-700 text-gray-400'
-                    }`}
-                  >
-                    <ImageIcon size={13} /> Rasm
-                  </button>
-                  <button 
-                    onClick={() => saveSurvey({ ...survey, link: !survey.link })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
-                      survey.link 
-                        ? 'bg-rose-500/10 border-rose-500/50 text-rose-400' 
-                        : 'bg-zinc-800 border-zinc-700 text-gray-400'
-                    }`}
-                  >
-                    <LinkIcon size={13} /> Havola
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Direct Link Ulashish / Share Bento Widget */}
-            <div className="bento-card p-6 fade-in w-full" style={{ '--card-accent': '#f43f5e', animationDelay: '0.15s' } as React.CSSProperties}>
+          {/* Card 3: Direct Link Ulashish / Share Bento Widget */}
+          <div className="bento-card col-span-12 lg:col-span-5 p-6 fade-in flex flex-col justify-between" style={{ '--card-accent': '#f43f5e', animationDelay: '0.15s' } as React.CSSProperties}>
+            <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div className="icon-badge" style={{ '--badge-color': '#f43f5e', '--badge-bg': '#f43f5e15' } as React.CSSProperties}>
@@ -914,7 +846,68 @@ export default function Home() {
                 </form>
               )}
             </div>
+          </div>
 
+          {/* Card 1: Bu nima qiladi? */}
+          <div className="bento-card col-span-12 lg:col-span-6 p-6 fade-in flex flex-col justify-between min-h-[170px]">
+            <div>
+              <div className="icon-badge" style={{ '--badge-color': '#10b981' } as React.CSSProperties}>
+                <Info size={20} />
+              </div>
+              <h2 className="text-lg font-bold text-white mb-2">Bu nima qiladi?</h2>
+              <p className="text-gray-400 text-xs leading-relaxed">
+                Qaytnoma orqali matnlar, rasmlar va havolalarni Bento uslubida vizual saqlashingiz va Telegram/Emaildan foydalanmasdan maxsus link orqali ulashingiz mumkin.
+              </p>
+            </div>
+            <div className="text-[10px] text-gray-500 mt-4 font-mono">
+              ★ Premium Vizual Layout • Direct Link Share
+            </div>
+          </div>
+
+          {/* Card 2: So'rovnoma */}
+          <div className="bento-card col-span-12 lg:col-span-6 p-6 fade-in flex flex-col justify-between" style={{ animationDelay: '0.1s' }}>
+            <div>
+              <div className="icon-badge" style={{ '--badge-color': '#a855f7' } as React.CSSProperties}>
+                <Sliders size={20} />
+              </div>
+              <h2 className="text-lg font-bold text-white mb-1">So'rovnoma</h2>
+              <p className="text-gray-400 text-xs mb-3">
+                Nimalarni saqlamoqchisiz? Kerakli turlarni belgilang:
+              </p>
+              
+              <div className="flex flex-wrap gap-2">
+                <button 
+                  onClick={() => saveSurvey({ ...survey, text: !survey.text })}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                    survey.text 
+                      ? 'bg-amber-500/10 border-amber-500/50 text-amber-400' 
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                  }`}
+                >
+                  <FileText size={13} /> Matn
+                </button>
+                <button 
+                  onClick={() => saveSurvey({ ...survey, image: !survey.image })}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                    survey.image 
+                      ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' 
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                  }`}
+                >
+                  <ImageIcon size={13} /> Rasm
+                </button>
+                <button 
+                  onClick={() => saveSurvey({ ...survey, link: !survey.link })}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                    survey.link 
+                      ? 'bg-rose-500/10 border-rose-500/50 text-rose-400' 
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                  }`}
+                >
+                  <LinkIcon size={13} /> Havola
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>
