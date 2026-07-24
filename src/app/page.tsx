@@ -442,14 +442,13 @@ export default function Home() {
             </button>
           </div>
         </header>
-        {/* Bento Grid Layout (2-Column Asymmetric Sketch Layout) */}
+
+        {/* Bento Grid Layout (Symmetric Row Style) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           
-          {/* Left Column (spans 7 cols on desktop) */}
-          <div className="lg:col-span-7 flex flex-col gap-5">
-            
-            {/* Card 4: Yangi Qayd Qo'shish Form */}
-            <div className="bento-card p-6 fade-in w-full">
+          {/* Card 4: Yangi Qayd Qo'shish Form */}
+          <div className="bento-card col-span-12 lg:col-span-7 p-6 fade-in flex flex-col justify-between">
+            <div>
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Plus size={18} /> Yangi Qayd Qo'shish
               </h2>
@@ -639,286 +638,276 @@ export default function Home() {
                 </div>
               </form>
             </div>
-            
-            {/* Card 1: Bu nima qiladi? */}
-            <div className="bento-card p-4.5 fade-in flex flex-col justify-between min-h-[130px] w-full">
-              <div>
-                <div className="icon-badge" style={{ '--badge-color': '#10b981', width: '28px', height: '28px' } as React.CSSProperties}>
-                  <Info size={15} />
-                </div>
-                <h2 className="text-sm font-extrabold text-white mb-1">Bu nima qiladi?</h2>
-                <p className="text-gray-455 text-[11px] leading-relaxed">
-                  Qaytnoma orqali matnlar, rasmlar va havolalarni Bento uslubida vizual saqlashingiz va Telegram/Emaildan foydalanmasdan maxsus link orqali ulashingiz mumkin.
-                </p>
-              </div>
-              <div className="text-[9px] text-gray-500 mt-2 font-mono">
-                ★ Premium Vizual Layout • Direct Link Share
-              </div>
-            </div>
-
-            {/* Card 2: So'rovnoma */}
-            <div className="bento-card p-4.5 fade-in flex flex-col justify-between min-h-[130px] w-full" style={{ animationDelay: '0.1s' }}>
-              <div>
-                <div className="icon-badge" style={{ '--badge-color': '#a855f7', width: '28px', height: '28px' } as React.CSSProperties}>
-                  <Sliders size={15} />
-                </div>
-                <h2 className="text-sm font-extrabold text-white mb-1">So'rovnoma</h2>
-                <p className="text-gray-455 text-[11px] mb-2">
-                  Nimalarni saqlamoqchisiz? Kerakli turlarni belgilang:
-                </p>
-                
-                <div className="flex flex-wrap gap-1.5">
-                  <button 
-                    onClick={() => saveSurvey({ ...survey, text: !survey.text })}
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
-                      survey.text 
-                        ? 'bg-amber-500/10 border-amber-500/50 text-amber-400' 
-                        : 'bg-zinc-800 border-zinc-700 text-gray-400'
-                    }`}
-                  >
-                    <FileText size={10} /> Matn
-                  </button>
-                  <button 
-                    onClick={() => saveSurvey({ ...survey, image: !survey.image })}
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
-                      survey.image 
-                        ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' 
-                        : 'bg-zinc-800 border-zinc-700 text-gray-400'
-                    }`}
-                  >
-                    <ImageIcon size={10} /> Rasm
-                  </button>
-                  <button 
-                    onClick={() => saveSurvey({ ...survey, link: !survey.link })}
-                    className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
-                      survey.link 
-                        ? 'bg-rose-500/10 border-rose-500/50 text-rose-400' 
-                        : 'bg-zinc-800 border-zinc-700 text-gray-400'
-                    }`}
-                  >
-                    <LinkIcon size={10} /> Havola
-                  </button>
-                </div>
-              </div>
-            </div>
-
           </div>
 
-          {/* Right Column (spans 5 cols on desktop) */}
-          <div className="lg:col-span-5 flex">
-            
-            {/* Card 3: Direct Link Ulashish / Share Bento Widget */}
-            <div className="bento-card p-6 fade-in w-full flex flex-col justify-between h-full" style={{ '--card-accent': '#f43f5e', animationDelay: '0.15s' } as React.CSSProperties}>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="icon-badge" style={{ '--badge-color': '#f43f5e', '--badge-bg': '#f43f5e15' } as React.CSSProperties}>
-                      <Share2 size={18} />
-                    </div>
-                    <h2 className="text-lg font-bold text-white">Direct Link Ulashish</h2>
+          {/* Card 3: Direct Link Ulashish / Share Bento Widget */}
+          <div className="bento-card col-span-12 lg:col-span-5 p-6 fade-in flex flex-col justify-between" style={{ '--card-accent': '#f43f5e', animationDelay: '0.15s' } as React.CSSProperties}>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="icon-badge" style={{ '--badge-color': '#f43f5e', '--badge-bg': '#f43f5e15' } as React.CSSProperties}>
+                    <Share2 size={18} />
                   </div>
-                  <a href="/share" className="text-xs text-rose-400 hover:underline flex items-center gap-1">
-                    To'liq sahifa <ExternalLink size={10} />
-                  </a>
+                  <h2 className="text-lg font-bold text-white">Direct Link Ulashish</h2>
                 </div>
+                <a href="/share" className="text-xs text-rose-400 hover:underline flex items-center gap-1">
+                  To'liq sahifa <ExternalLink size={10} />
+                </a>
+              </div>
 
-                {generatedShareUrl ? (
-                  <div className="space-y-4 mt-3 fade-in">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-450 animate-pulse shadow-[0_0_8px_#10b981]"></span>
-                        Link tayyor!
-                      </span>
-                      <span className="text-[9px] uppercase font-mono tracking-wider text-zinc-500 font-extrabold">
-                        Qisqa Havola
-                      </span>
+              {generatedShareUrl ? (
+                <div className="space-y-4 mt-3 fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-450 animate-pulse shadow-[0_0_8px_#10b981]"></span>
+                      Link tayyor!
+                    </span>
+                    <span className="text-[9px] uppercase font-mono tracking-wider text-zinc-500 font-extrabold">
+                      Qisqa Havola
+                    </span>
+                  </div>
+
+                  <div 
+                    onClick={copyShareLink}
+                    className="group relative bg-zinc-950 hover:bg-zinc-900 border border-zinc-850 hover:border-rose-500/40 rounded-xl p-3.5 transition-all duration-200 cursor-pointer shadow-inner flex items-center justify-between gap-3"
+                    title="Nusxalash uchun bosing"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block mb-0.5">Havola manzili</span>
+                      <div className="text-sm font-mono font-bold text-rose-400 truncate tracking-wide">
+                        {generatedShareUrl}
+                      </div>
                     </div>
+                    <div className="w-8 h-8 rounded-lg bg-zinc-900 group-hover:bg-rose-500/10 flex items-center justify-center text-zinc-400 group-hover:text-rose-400 transition-colors border border-zinc-800 group-hover:border-rose-500/20 flex-shrink-0 shadow-sm">
+                      {copiedShare ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                    </div>
+                  </div>
 
-                    <div 
+                  <div className="flex gap-2">
+                    <button
                       onClick={copyShareLink}
-                      className="group relative bg-zinc-950 hover:bg-zinc-900 border border-zinc-850 hover:border-rose-500/40 rounded-xl p-3.5 transition-all duration-200 cursor-pointer shadow-inner flex items-center justify-between gap-3"
-                      title="Nusxalash uchun bosing"
+                      className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${
+                        copiedShare 
+                          ? 'bg-emerald-500 text-black shadow-emerald-500/10' 
+                          : 'bg-rose-500 hover:bg-rose-600 text-black'
+                      }`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block mb-0.5">Havola manzili</span>
-                        <div className="text-sm font-mono font-bold text-rose-400 truncate tracking-wide">
-                          {generatedShareUrl}
-                        </div>
-                      </div>
-                      <div className="w-8 h-8 rounded-lg bg-zinc-900 group-hover:bg-rose-500/10 flex items-center justify-center text-zinc-400 group-hover:text-rose-400 transition-colors border border-zinc-800 group-hover:border-rose-500/20 flex-shrink-0 shadow-sm">
-                        {copiedShare ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
+                      {copiedShare ? (
+                        <>
+                          <Check size={14} className="stroke-[3px]" />
+                          <span>Nusxalandi!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={14} />
+                          <span>Nusxalash</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setGeneratedShareUrl(null);
+                        setShareTitle('');
+                        setShareContent('');
+                        setShareSender('');
+                      }}
+                      className="px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs font-bold text-zinc-400 hover:text-white flex items-center gap-1 transition-all active:scale-95"
+                      title="Yangi havola yaratish"
+                    >
+                      <RotateCcw size={13} />
+                      <span>Qayta</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleCreateShare} className="space-y-2.5 mt-2">
+                  <div className="flex gap-1.5 p-0.5 bg-zinc-950 rounded-lg border border-zinc-850">
+                    {(['text', 'image', 'link'] as const).map((t) => (
                       <button
-                        onClick={copyShareLink}
-                        className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${
-                          copiedShare 
-                            ? 'bg-emerald-500 text-black shadow-emerald-500/10' 
-                            : 'bg-rose-500 hover:bg-rose-600 text-black'
+                        key={t}
+                        type="button"
+                        onClick={() => {
+                          setShareType(t);
+                          setShareContent('');
+                        }}
+                        className={`flex-1 py-1 rounded-md text-[10px] font-bold capitalize transition-all ${
+                          shareType === t 
+                            ? 'bg-rose-500 text-black' 
+                            : 'text-gray-400 hover:text-white'
                         }`}
                       >
-                        {copiedShare ? (
-                          <>
-                            <Check size={14} className="stroke-[3px]" />
-                            <span>Nusxalandi!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={14} />
-                            <span>Nusxalash</span>
-                          </>
-                        )}
+                        {t === 'text' ? 'Matn' : t === 'image' ? 'Rasm' : 'Havola'}
                       </button>
-                      <button
-                        onClick={() => {
-                          setGeneratedShareUrl(null);
-                          setShareTitle('');
-                          setShareContent('');
-                          setShareSender('');
-                        }}
-                        className="px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs font-bold text-zinc-400 hover:text-white flex items-center gap-1 transition-all active:scale-95"
-                        title="Yangi havola yaratish"
-                      >
-                        <RotateCcw size={13} />
-                        <span>Qayta</span>
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                ) : (
-                  <form onSubmit={handleCreateShare} className="space-y-2.5 mt-2">
-                    <div className="flex gap-1.5 p-0.5 bg-zinc-950 rounded-lg border border-zinc-850">
-                      {(['text', 'image', 'link'] as const).map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => {
-                            setShareType(t);
-                            setShareContent('');
-                          }}
-                          className={`flex-1 py-1 rounded-md text-[10px] font-bold capitalize transition-all ${
-                            shareType === t 
-                              ? 'bg-rose-500 text-black' 
-                              : 'text-gray-400 hover:text-white'
-                          }`}
-                        >
-                          {t === 'text' ? 'Matn' : t === 'image' ? 'Rasm' : 'Havola'}
-                        </button>
-                      ))}
-                    </div>
 
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ulashish sarlavhasi..."
+                    value={shareTitle}
+                    onChange={(e) => setShareTitle(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
+                  />
+
+                  {shareType === 'image' ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-gray-400 font-semibold">Yuklash turi</span>
+                        <div className="flex gap-1 bg-zinc-950 p-0.5 rounded-lg border border-zinc-850">
+                          <button
+                            type="button"
+                            onClick={() => { setShareUploadMode('url'); setShareContent(''); }}
+                            className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                              shareUploadMode === 'url' ? 'bg-rose-500 text-black' : 'text-gray-400'
+                            }`}
+                          >
+                            URL
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setShareUploadMode('file'); setShareContent(''); }}
+                            className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                              shareUploadMode === 'file' ? 'bg-rose-500 text-black' : 'text-gray-400'
+                            }`}
+                          >
+                            Fayl
+                          </button>
+                        </div>
+                      </div>
+
+                      {shareUploadMode === 'url' ? (
+                        <input
+                          type="url"
+                          required
+                          placeholder="Rasm URL manzili..."
+                          value={shareContent}
+                          onChange={(e) => setShareContent(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
+                        />
+                      ) : (
+                        <div className="relative border border-dashed border-zinc-750 hover:border-rose-500 rounded-lg p-3 bg-zinc-900/40 text-center cursor-pointer group">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageFileChange(e, setShareContent)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <div className="flex flex-col items-center justify-center gap-1 pointer-events-none">
+                            <Upload size={14} className="text-gray-400 group-hover:text-rose-450 transition-colors" />
+                            <span className="text-[10px] text-gray-300 font-medium">Rasm faylini tanlang</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {shareContent && (
+                        <div className="relative w-full h-16 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/50">
+                          <img src={shareContent} alt="Preview" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setShareContent('')}
+                            className="absolute top-1 right-1 p-0.5 rounded bg-black/60 hover:bg-black text-gray-300 hover:text-white"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <input
                       type="text"
                       required
-                      placeholder="Ulashish sarlavhasi..."
-                      value={shareTitle}
-                      onChange={(e) => setShareTitle(e.target.value)}
+                      placeholder={shareType === 'link' ? 'https://...' : 'Matn...'}
+                      value={shareContent}
+                      onChange={(e) => setShareContent(e.target.value)}
                       className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
                     />
+                  )}
 
-                    {shareType === 'image' ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-gray-400 font-semibold">Yuklash turi</span>
-                          <div className="flex gap-1 bg-zinc-950 p-0.5 rounded-lg border border-zinc-850">
-                            <button
-                              type="button"
-                              onClick={() => { setShareUploadMode('url'); setShareContent(''); }}
-                              className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
-                                shareUploadMode === 'url' ? 'bg-rose-500 text-black' : 'text-gray-400'
-                              }`}
-                            >
-                              URL
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => { setShareUploadMode('file'); setShareContent(''); }}
-                              className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
-                                shareUploadMode === 'file' ? 'bg-rose-500 text-black' : 'text-gray-400'
-                              }`}
-                            >
-                              Fayl
-                            </button>
-                          </div>
-                        </div>
-
-                        {shareUploadMode === 'url' ? (
-                          <input
-                            type="url"
-                            required
-                            placeholder="Rasm URL manzili..."
-                            value={shareContent}
-                            onChange={(e) => setShareContent(e.target.value)}
-                            className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
-                          />
-                        ) : (
-                          <div className="relative border border-dashed border-zinc-750 hover:border-rose-500 rounded-lg p-3 bg-zinc-900/40 text-center cursor-pointer group">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleImageFileChange(e, setShareContent)}
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            />
-                            <div className="flex flex-col items-center justify-center gap-1 pointer-events-none">
-                              <Upload size={14} className="text-gray-400 group-hover:text-rose-450 transition-colors" />
-                              <span className="text-[10px] text-gray-300 font-medium">Rasm faylini tanlang</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {shareContent && (
-                          <div className="relative w-full h-16 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/50">
-                            <img src={shareContent} alt="Preview" className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => setShareContent('')}
-                              className="absolute top-1 right-1 p-0.5 rounded bg-black/60 hover:bg-black text-gray-300 hover:text-white"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <input
-                        type="text"
-                        required
-                        placeholder={shareType === 'link' ? 'https://...' : 'Matn...'}
-                        value={shareContent}
-                        onChange={(e) => setShareContent(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
-                      />
-                    )}
-
-                    <div className="flex gap-2">
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      disabled={isSharing || !shareTitle.trim() || !shareContent.trim()}
+                      className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 font-bold text-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {isSharing ? 'Yaratilmoqda...' : <><Send size={12} /> Link Yaratish</>}
+                    </button>
+                    {(shareTitle || shareContent) && (
                       <button
-                        type="submit"
-                        disabled={isSharing || !shareTitle.trim() || !shareContent.trim()}
-                        className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 font-bold text-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                        type="button"
+                        onClick={() => { setShareTitle(''); setShareContent(''); setShareSender(''); }}
+                        className="px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/80 text-gray-300 hover:text-white rounded-xl text-xs flex items-center justify-center gap-1 font-medium transition-all"
+                        title="Tozalash"
                       >
-                        {isSharing ? 'Yaratilmoqda...' : <><Send size={12} /> Link Yaratish</>}
+                        <RotateCcw size={13} />
                       </button>
-                      {(shareTitle || shareContent) && (
-                        <button
-                          type="button"
-                          onClick={() => { setShareTitle(''); setShareContent(''); setShareSender(''); }}
-                          className="px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/80 text-gray-300 hover:text-white rounded-xl text-xs flex items-center justify-center gap-1 font-medium transition-all"
-                          title="Tozalash"
-                        >
-                          <RotateCcw size={13} />
-                        </button>
-                      )}
-                    </div>
-                  </form>
-                )}
+                    )}
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+
+          {/* Card 1: Bu nima qiladi? */}
+          <div className="bento-card col-span-12 lg:col-span-6 p-4.5 fade-in flex flex-col justify-between min-h-[130px]">
+            <div>
+              <div className="icon-badge" style={{ '--badge-color': '#10b981', width: '28px', height: '28px' } as React.CSSProperties}>
+                <Info size={15} />
               </div>
+              <h2 className="text-sm font-extrabold text-white mb-1">Bu nima qiladi?</h2>
+              <p className="text-gray-455 text-[11px] leading-relaxed">
+                Qaytnoma orqali matnlar, rasmlar va havolalarni Bento uslubida vizual saqlashingiz va Telegram/Emaildan foydalanmasdan maxsus link orqali ulashingiz mumkin.
+              </p>
+            </div>
+            <div className="text-[9px] text-gray-500 mt-2 font-mono">
+              ★ Premium Vizual Layout • Direct Link Share
+            </div>
+          </div>
+
+          {/* Card 2: So'rovnoma */}
+          <div className="bento-card col-span-12 lg:col-span-6 p-4.5 fade-in flex flex-col justify-between min-h-[130px]" style={{ animationDelay: '0.1s' }}>
+            <div>
+              <div className="icon-badge" style={{ '--badge-color': '#a855f7', width: '28px', height: '28px' } as React.CSSProperties}>
+                <Sliders size={15} />
+              </div>
+              <h2 className="text-sm font-extrabold text-white mb-1">So'rovnoma</h2>
+              <p className="text-gray-455 text-[11px] mb-2">
+                Nimalarni saqlamoqchisiz? Kerakli turlarni belgilang:
+              </p>
               
-              <div className="text-[10px] text-gray-500 mt-6 font-mono border-t border-zinc-800/50 pt-3">
-                ★ Tezkor ulashish tizimi • Havolalar xavfsiz va qisqa
+              <div className="flex flex-wrap gap-1.5">
+                <button 
+                  onClick={() => saveSurvey({ ...survey, text: !survey.text })}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
+                    survey.text 
+                      ? 'bg-amber-500/10 border-amber-500/50 text-amber-400' 
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                  }`}
+                >
+                  <FileText size={10} /> Matn
+                </button>
+                <button 
+                  onClick={() => saveSurvey({ ...survey, image: !survey.image })}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
+                    survey.image 
+                      ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' 
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                  }`}
+                >
+                  <ImageIcon size={10} /> Rasm
+                </button>
+                <button 
+                  onClick={() => saveSurvey({ ...survey, link: !survey.link })}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
+                    survey.link 
+                      ? 'bg-rose-500/10 border-rose-500/50 text-rose-400' 
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                  }`}
+                >
+                  <LinkIcon size={10} /> Havola
+                </button>
               </div>
             </div>
-            
           </div>
 
         </div>
