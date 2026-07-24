@@ -26,11 +26,26 @@ export default async function ShareViewPage({
 }) {
   const { id } = await params;
 
-  const { data, error } = await supabase
-    .from('shared_items')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  
+  let data = null;
+  let error = null;
+
+  if (uuidRegex.test(id)) {
+    const res = await supabase.from('shared_items').select('*').eq('id', id).single();
+    data = res.data;
+    error = res.error;
+  } else {
+    // Try querying by short_id
+    const res = await supabase.from('shared_items').select('*').eq('short_id', id).single();
+    if (res.error && res.error.message.includes('short_id')) {
+      // Column doesn't exist yet
+      error = res.error;
+    } else {
+      data = res.data;
+      error = res.error;
+    }
+  }
 
   if (error || !data) {
     notFound();

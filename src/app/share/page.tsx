@@ -42,6 +42,15 @@ const TYPE_CONFIG = {
   }
 };
 
+const generateShortId = () => {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 export default function SharePage() {
   const [type, setType] = useState<ShareType>('text');
   const [title, setTitle] = useState('');
@@ -82,21 +91,46 @@ export default function SharePage() {
 
     try {
       setIsCreating(true);
-      const { data, error } = await supabase
+      const insertData = {
+        type,
+        title: title.trim(),
+        content: content.trim(),
+        image_url: type === 'image' ? content.trim() : null,
+        sender: sender.trim() || 'Anonim',
+        short_id: generateShortId(),
+      };
+
+      let data: any = null;
+      let error = null;
+
+      const res = await supabase
         .from('shared_items')
-        .insert([{
-          type,
-          title: title.trim(),
-          content: content.trim(),
-          image_url: type === 'image' ? content.trim() : null,
-          sender: sender.trim() || 'Anonim',
-        }])
-        .select('id')
+        .insert([insertData])
+        .select('short_id, id')
         .single();
 
-      if (error) throw error;
+      error = res.error;
+      data = res.data;
 
-      const link = `${window.location.origin}/share/${data.id}`;
+      if (error && error.message.includes('short_id')) {
+        // Fallback: retry without short_id
+        const fallbackInsert = { ...insertData };
+        delete (fallbackInsert as any).short_id;
+
+        const retryRes = await supabase
+          .from('shared_items')
+          .insert([fallbackInsert])
+          .select('id')
+          .single();
+
+        if (retryRes.error) throw retryRes.error;
+        data = retryRes.data as any;
+      } else if (error) {
+        throw error;
+      }
+
+      const linkId = data.short_id || data.id;
+      const link = `${window.location.origin}/share/${linkId}`;
       setGeneratedLink(link);
     } catch (err) {
       console.error(err);

@@ -37,6 +37,15 @@ interface QaytnomaItem {
   created_at: string;
 }
 
+const generateShortId = () => {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 export default function Home() {
   const [items, setItems] = useState<QaytnomaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,23 +121,48 @@ export default function Home() {
     try {
       setSharingItemId(item.id);
       
+      const insertData = {
+        type: item.type,
+        title: item.title,
+        content: item.type === 'image' ? item.image_url : item.content,
+        image_url: item.type === 'image' ? item.image_url : null,
+        sender: item.sender || 'Anonim',
+        short_id: generateShortId(),
+      };
+
+      let data: any = null;
+      let error = null;
+
       // Insert into shared_items to create unique link for this saved item
-      const { data, error } = await supabase
+      const res = await supabase
         .from('shared_items')
-        .insert([{
-          type: item.type,
-          title: item.title,
-          content: item.type === 'image' ? item.image_url : item.content,
-          image_url: item.type === 'image' ? item.image_url : null,
-          sender: item.sender || 'Anonim',
-        }])
-        .select('id')
+        .insert([insertData])
+        .select('short_id, id')
         .single();
 
-      if (error) throw error;
+      error = res.error;
+      data = res.data;
 
+      if (error && error.message.includes('short_id')) {
+        // Fallback: retry without short_id
+        const fallbackInsert = { ...insertData };
+        delete (fallbackInsert as any).short_id;
+        
+        const retryRes = await supabase
+          .from('shared_items')
+          .insert([fallbackInsert])
+          .select('id')
+          .single();
+        
+        if (retryRes.error) throw retryRes.error;
+        data = retryRes.data as any;
+      } else if (error) {
+        throw error;
+      }
+
+      const linkId = data.short_id || data.id;
       // Copy the dynamic vercel share link
-      const link = `https://qaydnoma-six.vercel.app/share/${data.id}`;
+      const link = `https://qaydnoma-six.vercel.app/share/${linkId}`;
       await navigator.clipboard.writeText(link);
 
       setCopiedItemId(item.id);
@@ -226,21 +260,46 @@ export default function Home() {
 
     try {
       setIsSharing(true);
-      const { data, error } = await supabase
+      const insertData = {
+        type: shareType,
+        title: shareTitle.trim(),
+        content: shareContent.trim(),
+        image_url: shareType === 'image' ? shareContent.trim() : null,
+        sender: shareSender.trim() || 'Anonim',
+        short_id: generateShortId(),
+      };
+
+      let data: any = null;
+      let error = null;
+
+      const res = await supabase
         .from('shared_items')
-        .insert([{
-          type: shareType,
-          title: shareTitle.trim(),
-          content: shareContent.trim(),
-          image_url: shareType === 'image' ? shareContent.trim() : null,
-          sender: shareSender.trim() || 'Anonim',
-        }])
-        .select('id')
+        .insert([insertData])
+        .select('short_id, id')
         .single();
 
-      if (error) throw error;
+      error = res.error;
+      data = res.data;
 
-      const link = `https://qaydnoma-six.vercel.app/share/${data.id}`;
+      if (error && error.message.includes('short_id')) {
+        // Fallback: retry without short_id
+        const fallbackInsert = { ...insertData };
+        delete (fallbackInsert as any).short_id;
+
+        const retryRes = await supabase
+          .from('shared_items')
+          .insert([fallbackInsert])
+          .select('id')
+          .single();
+
+        if (retryRes.error) throw retryRes.error;
+        data = retryRes.data as any;
+      } else if (error) {
+        throw error;
+      }
+
+      const linkId = data.short_id || data.id;
+      const link = `https://qaydnoma-six.vercel.app/share/${linkId}`;
       setGeneratedShareUrl(link);
     } catch (err) {
       console.error('Share error:', err);
