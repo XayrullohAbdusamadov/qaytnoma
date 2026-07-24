@@ -65,13 +65,50 @@ export default function Home() {
   const [copiedShare, setCopiedShare] = useState(false);
 
   // Vercel link copy state
-  const vercelUrl = 'https://qaytnoma.vercel.app';
+  const vercelUrl = 'https://qaydnoma-six.vercel.app/';
   const [copiedVercel, setCopiedVercel] = useState(false);
+
+  // Card Share states
+  const [sharingItemId, setSharingItemId] = useState<string | null>(null);
+  const [copiedItemId, setCopiedItemId] = useState<string | null>(null);
 
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<QaytnomaItem | null>(null);
   const [editForm, setEditForm] = useState({ title: '', content: '', sender: '', image_url: '' });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Share individual card data
+  const handleShareCard = async (item: QaytnomaItem) => {
+    try {
+      setSharingItemId(item.id);
+      
+      // Insert into shared_items to create unique link for this saved item
+      const { data, error } = await supabase
+        .from('shared_items')
+        .insert([{
+          type: item.type,
+          title: item.title,
+          content: item.type === 'image' ? item.image_url : item.content,
+          image_url: item.type === 'image' ? item.image_url : null,
+          sender: item.sender || 'Anonim',
+        }])
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      // Copy the dynamic vercel share link
+      const link = `${window.location.origin}/share/${data.id}`;
+      await navigator.clipboard.writeText(link);
+
+      setCopiedItemId(item.id);
+      setTimeout(() => setCopiedItemId(null), 2000);
+    } catch (err) {
+      console.error('Error sharing card:', err);
+    } finally {
+      setSharingItemId(null);
+    }
+  };
 
   // Fetch Items from Supabase
   const fetchItems = async () => {
@@ -619,6 +656,24 @@ export default function Home() {
                   </div>
                   
                   <div className="flex gap-2">
+                    {/* Share Card Button */}
+                    <button
+                      onClick={() => handleShareCard(item)}
+                      className={`p-1.5 border rounded-lg transition-all ${
+                        copiedItemId === item.id 
+                          ? 'bg-emerald-500 border-emerald-500 text-black' 
+                          : 'border-zinc-700 hover:border-rose-500 text-gray-400 hover:text-rose-400'
+                      }`}
+                      title={copiedItemId === item.id ? "Nusxalandi!" : "Vercel Share link yaratish va nusxalash"}
+                      disabled={sharingItemId === item.id}
+                    >
+                      {copiedItemId === item.id ? (
+                        <Check size={14} />
+                      ) : (
+                        <Share2 size={14} className={sharingItemId === item.id ? 'animate-spin' : ''} />
+                      )}
+                    </button>
+
                     <button
                       onClick={() => handleOpenEdit(item)}
                       className="p-1.5 border border-zinc-700 hover:border-blue-500 rounded-lg text-gray-400 hover:text-blue-400 transition-all"
