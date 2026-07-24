@@ -446,8 +446,8 @@ export default function Home() {
         {/* Bento Grid Layout */}
         <div className="bento-grid">
           
-          {/* Card 1: Bu nima qiladi? (Col span 4) */}
-          <div className="bento-card col-span-12 md:col-span-4 p-6 min-h-[200px] fade-in">
+          {/* Card 1: Bu nima qiladi? (Col span 3) */}
+          <div className="bento-card col-span-12 md:col-span-3 p-6 min-h-[200px] fade-in">
             <div>
               <div className="icon-badge" style={{ '--badge-color': '#10b981' } as React.CSSProperties}>
                 <Info size={20} />
@@ -462,8 +462,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Card 2: So'rovnoma (Col span 4) */}
-          <div className="bento-card col-span-12 md:col-span-4 p-6 fade-in" style={{ animationDelay: '0.1s' }}>
+          {/* Card 2: So'rovnoma (Col span 3) */}
+          <div className="bento-card col-span-12 md:col-span-3 p-6 fade-in" style={{ animationDelay: '0.1s' }}>
             <div>
               <div className="icon-badge" style={{ '--badge-color': '#a855f7' } as React.CSSProperties}>
                 <Sliders size={20} />
@@ -508,8 +508,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Card 3: Direct Link Ulashish / Share Bento Widget (Col span 4) */}
-          <div className="bento-card col-span-12 md:col-span-4 p-6 fade-in" style={{ '--card-accent': '#f43f5e', animationDelay: '0.15s' } as React.CSSProperties}>
+          {/* Card 3: Direct Link Ulashish / Share Bento Widget (Col span 6) */}
+          <div className="bento-card col-span-12 md:col-span-6 p-6 fade-in" style={{ '--card-accent': '#f43f5e', animationDelay: '0.15s' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <div className="icon-badge" style={{ '--badge-color': '#f43f5e', '--badge-bg': '#f43f5e15' } as React.CSSProperties}>
