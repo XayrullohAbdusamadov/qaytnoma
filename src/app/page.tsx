@@ -2,32 +2,34 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import NetworkBackground from '@/components/NetworkBackground';
 import { 
   FileText, 
   Image as ImageIcon, 
-  Clock, 
-  CheckSquare, 
   Link as LinkIcon, 
   Trash2, 
   Sliders, 
   Plus, 
   Check, 
-  HelpCircle, 
   ExternalLink,
   Info,
-  User
+  User,
+  Pencil,
+  X,
+  Share2,
+  Copy,
+  Send,
+  Globe
 } from 'lucide-react';
 
 interface QaytnomaItem {
   id: string;
   title: string;
   content: string | null;
-  type: 'text' | 'image' | 'datetime' | 'todo' | 'link';
+  type: 'text' | 'image' | 'link';
   image_url: string | null;
   color: string;
   icon: string;
-  is_completed: boolean;
-  target_time: string | null;
   sender: string;
   created_at: string;
 }
@@ -37,24 +39,39 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState<string | null>(null);
   
-  // Survey State
+  // Survey State (Vaqt va Vazifalar olib tashlandi, faqat Matn, Rasm, Havola qoldi)
   const [survey, setSurvey] = useState({
     text: true,
     image: true,
-    datetime: true,
-    todo: true,
     link: true,
   });
 
-  // Form State
+  // Main Form State
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [type, setType] = useState<'text' | 'image' | 'datetime' | 'todo' | 'link'>('text');
+  const [type, setType] = useState<'text' | 'image' | 'link'>('text');
   const [imageUrl, setImageUrl] = useState('');
-  const [color, setColor] = useState('#f59e0b'); // Default Amber
-  const [targetTime, setTargetTime] = useState('');
+  const [color, setColor] = useState('#f59e0b');
   const [sender, setSender] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Quick Share Form State (Bento Share block)
+  const [shareType, setShareType] = useState<'text' | 'image' | 'link'>('text');
+  const [shareTitle, setShareTitle] = useState('');
+  const [shareContent, setShareContent] = useState('');
+  const [shareSender, setShareSender] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
+  const [generatedShareUrl, setGeneratedShareUrl] = useState<string | null>(null);
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  // Vercel link copy state
+  const vercelUrl = 'https://qaytnoma.vercel.app';
+  const [copiedVercel, setCopiedVercel] = useState(false);
+
+  // Edit Modal State
+  const [editingItem, setEditingItem] = useState<QaytnomaItem | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', content: '', sender: '', image_url: '' });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Fetch Items from Supabase
   const fetchItems = async () => {
@@ -78,12 +95,15 @@ export default function Home() {
 
   useEffect(() => {
     fetchItems();
-    
-    // Load survey from localStorage if available
     const savedSurvey = localStorage.getItem('qaytnoma_survey');
     if (savedSurvey) {
       try {
-        setSurvey(JSON.parse(savedSurvey));
+        const parsed = JSON.parse(savedSurvey);
+        setSurvey({
+          text: parsed.text ?? true,
+          image: parsed.image ?? true,
+          link: parsed.link ?? true,
+        });
       } catch (e) {
         console.error(e);
       }
@@ -95,57 +115,35 @@ export default function Home() {
     localStorage.setItem('qaytnoma_survey', JSON.stringify(newSurvey));
   };
 
-  const handleTypeChange = (newType: typeof type) => {
-    setType(newType);
-    // Update default colors for better UX
-    switch (newType) {
-      case 'text': setColor('#f59e0b'); break; // Amber
-      case 'image': setColor('#a855f7'); break; // Purple
-      case 'datetime': setColor('#3b82f6'); break; // Blue
-      case 'todo': setColor('#10b981'); break; // Emerald
-      case 'link': setColor('#f43f5e'); break; // Rose
-    }
-  };
-
-  // Add Item
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
     try {
       setIsSubmitting(true);
-      let finalIcon = 'FileText';
-      switch (type) {
-        case 'image': finalIcon = 'ImageIcon'; break;
-        case 'datetime': finalIcon = 'Clock'; break;
-        case 'todo': finalIcon = 'CheckSquare'; break;
-        case 'link': finalIcon = 'LinkIcon'; break;
-      }
+      let iconName = 'FileText';
+      if (type === 'image') iconName = 'ImageIcon';
+      if (type === 'link') iconName = 'LinkIcon';
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('qaytnoma_items')
-        .insert([
-          {
-            title,
-            content: content || null,
-            type,
-            image_url: type === 'image' ? (imageUrl || 'https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=600&auto=format&fit=crop') : null,
-            color,
-            icon: finalIcon,
-            is_completed: false,
-            target_time: type === 'datetime' ? (targetTime || null) : null,
-            sender: sender.trim() || 'Anonim',
-          }
-        ])
-        .select();
+        .insert([{
+          title: title.trim(),
+          content: content.trim() || null,
+          type,
+          image_url: type === 'image' ? (imageUrl.trim() || null) : null,
+          color,
+          icon: iconName,
+          sender: sender.trim() || 'Anonim',
+          is_completed: false
+        }]);
 
       if (error) throw error;
-      
-      // Reset form
+
       setTitle('');
       setContent('');
       setImageUrl('');
-      setTargetTime('');
+      setSender('');
       fetchItems();
     } catch (err) {
       console.error('Error adding item:', err);
@@ -154,36 +152,54 @@ export default function Home() {
     }
   };
 
-  // Toggle Completion
-  const handleToggleComplete = async (id: string, currentStatus: boolean) => {
+  // Quick Share Creator Handler
+  const handleCreateShare = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shareTitle.trim() || !shareContent.trim()) return;
+
     try {
-      // Optimistic update
-      setItems(prev => prev.map(item => item.id === id ? { ...item, is_completed: !currentStatus } : item));
-      
-      const { error } = await supabase
-        .from('qaytnoma_items')
-        .update({ is_completed: !currentStatus })
-        .eq('id', id);
+      setIsSharing(true);
+      const { data, error } = await supabase
+        .from('shared_items')
+        .insert([{
+          type: shareType,
+          title: shareTitle.trim(),
+          content: shareContent.trim(),
+          image_url: shareType === 'image' ? shareContent.trim() : null,
+          sender: shareSender.trim() || 'Anonim',
+        }])
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      const link = `${window.location.origin}/share/${data.id}`;
+      setGeneratedShareUrl(link);
     } catch (err) {
-      console.error('Error toggling status:', err);
-      // Revert if error
-      fetchItems();
+      console.error('Share error:', err);
+    } finally {
+      setIsSharing(false);
     }
+  };
+
+  const copyVercelLink = async () => {
+    await navigator.clipboard.writeText(vercelUrl);
+    setCopiedVercel(true);
+    setTimeout(() => setCopiedVercel(false), 2000);
+  };
+
+  const copyShareLink = async () => {
+    if (!generatedShareUrl) return;
+    await navigator.clipboard.writeText(generatedShareUrl);
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2000);
   };
 
   // Delete Item
   const handleDeleteItem = async (id: string) => {
     try {
-      // Optimistic update
       setItems(prev => prev.filter(item => item.id !== id));
-
-      const { error } = await supabase
-        .from('qaytnoma_items')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('qaytnoma_items').delete().eq('id', id);
       if (error) throw error;
     } catch (err) {
       console.error('Error deleting item:', err);
@@ -191,140 +207,241 @@ export default function Home() {
     }
   };
 
-  // Render Icon helper
+  // Open Edit Modal
+  const handleOpenEdit = (item: QaytnomaItem) => {
+    setEditingItem(item);
+    setEditForm({
+      title: item.title,
+      content: item.content || '',
+      sender: item.sender || '',
+      image_url: item.image_url || '',
+    });
+  };
+
+  // Save Edit to Supabase
+  const handleSaveEdit = async () => {
+    if (!editingItem || !editForm.title.trim()) return;
+    try {
+      setIsSavingEdit(true);
+      const { error } = await supabase
+        .from('qaytnoma_items')
+        .update({
+          title: editForm.title,
+          content: editForm.content || null,
+          sender: editForm.sender || 'Anonim',
+          image_url: editingItem.type === 'image' ? editForm.image_url : editingItem.image_url,
+        })
+        .eq('id', editingItem.id);
+      if (error) throw error;
+      setEditingItem(null);
+      fetchItems();
+    } catch (err) {
+      console.error('Edit error:', err);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   const renderIcon = (iconName: string, color: string) => {
     const props = { size: 20, style: { color } };
     switch (iconName) {
       case 'FileText': return <FileText {...props} />;
       case 'ImageIcon': return <ImageIcon {...props} />;
-      case 'Clock': return <Clock {...props} />;
-      case 'CheckSquare': return <CheckSquare {...props} />;
       case 'LinkIcon': return <LinkIcon {...props} />;
       default: return <FileText {...props} />;
     }
   };
 
-  // Filter items based on survey settings
   const filteredItems = items.filter(item => {
     if (item.type === 'text' && !survey.text) return false;
     if (item.type === 'image' && !survey.image) return false;
-    if (item.type === 'datetime' && !survey.datetime) return false;
-    if (item.type === 'todo' && !survey.todo) return false;
     if (item.type === 'link' && !survey.link) return false;
     return true;
   });
 
   return (
-    <div className="relative min-height-screen pb-16 px-4 md:px-8">
-      {/* Harakatlanuvchi Fon Animatsiyasi */}
-      <div className="background-animation">
-        <div className="floating-circle circle-1"></div>
-        <div className="floating-circle circle-2"></div>
-        <div className="floating-circle circle-3"></div>
-      </div>
+    <div className="relative min-h-screen pb-16 px-4 md:px-8">
+      {/* Network Tech Dynamic Canvas Background */}
+      <NetworkBackground />
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto pt-8">
         
-        {/* Header Block */}
-        <header className="mb-10 text-center md:text-left fade-in">
-          <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-white">
-            Qaytnoma
-          </h1>
-          <p className="text-gray-400 max-w-xl">
-            Bento uslubidagi zamonaviy eslatmalar va qaydlar daftari. Supabase orqali real-time saqlash tizimi.
-          </p>
+        {/* Header Block with Vercel Badge */}
+        <header className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 fade-in">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-white flex items-center gap-3">
+              Qaytnoma
+            </h1>
+            <p className="text-gray-400 max-w-xl text-sm">
+              Bento uslubidagi zamonaviy eslatmalar va qaydlar daftari. Real-time saqlash va linklar ulashish tizimi.
+            </p>
+          </div>
+
+          {/* Vercel Live Link Block */}
+          <div className="bg-zinc-900/90 border border-zinc-700/80 rounded-2xl p-4 flex items-center gap-3 shadow-xl backdrop-blur-md">
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold">
+              ▲
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[10px] font-bold tracking-wider text-emerald-400 uppercase">Vercel Live</span>
+              </div>
+              <a
+                href={vercelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono font-semibold text-white hover:text-blue-400 transition-colors flex items-center gap-1"
+              >
+                qaytnoma.vercel.app <ExternalLink size={11} />
+              </a>
+            </div>
+            <button
+              onClick={copyVercelLink}
+              className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-gray-300 transition-all text-xs flex items-center gap-1 border border-zinc-700"
+              title="Vercel linkini nusxalash"
+            >
+              {copiedVercel ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+            </button>
+          </div>
         </header>
 
         {/* Bento Grid Layout */}
         <div className="bento-grid">
           
-          {/* Card 1: Nima bu / Hero (Col span 6, Row span 1) */}
-          <div className="bento-card col-span-12 md:col-span-6 p-6 min-h-[220px] fade-in">
+          {/* Card 1: Bu nima qiladi? (Col span 4) */}
+          <div className="bento-card col-span-12 md:col-span-4 p-6 min-h-[200px] fade-in">
             <div>
               <div className="icon-badge" style={{ '--badge-color': '#10b981' } as React.CSSProperties}>
                 <Info size={20} />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Bu nima qiladi?</h2>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Qaytnoma orqali siz matnlar, rasmlar, havolalar, vazifalar va muhim vaqt chegaralarini bir joyda Bento uslubida vizual tarzda saqlashingiz mumkin. Har bir ma'lumot turi o'z rang va ikonkasiga ega.
+              <h2 className="text-lg font-bold text-white mb-2">Bu nima qiladi?</h2>
+              <p className="text-gray-400 text-xs leading-relaxed">
+                Qaytnoma orqali matnlar, rasmlar va havolalarni Bento uslubida vizual saqlashingiz va Telegram/Emaildan foydalanmasdan maxsus link orqali ulashingiz mumkin.
               </p>
             </div>
-            <div className="text-xs text-gray-500 mt-4">
-              Premium vizual dizayn • Tez va qulay
+            <div className="text-[10px] text-gray-500 mt-4 font-mono">
+              ★ Premium Vizual Layout • Direct Link Share
             </div>
           </div>
 
-          {/* Card 2: So'rovnoma / Survey (Col span 12 or 6) */}
-          <div className="bento-card col-span-12 md:col-span-6 p-6 fade-in" style={{ animationDelay: '0.1s' }}>
+          {/* Card 2: So'rovnoma (Col span 4) */}
+          <div className="bento-card col-span-12 md:col-span-4 p-6 fade-in" style={{ animationDelay: '0.1s' }}>
             <div>
               <div className="icon-badge" style={{ '--badge-color': '#a855f7' } as React.CSSProperties}>
                 <Sliders size={20} />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">So'rovnoma: Nimalarni saqlamoqchisiz?</h2>
-              <p className="text-gray-400 text-sm mb-4">
-                Quyidagilardan qaysi birlarini ishlatishni istasangiz belgilang. Shunga ko'ra interfeys moslashadi:
+              <h2 className="text-lg font-bold text-white mb-1">So'rovnoma</h2>
+              <p className="text-gray-400 text-xs mb-3">
+                Nimalarni saqlamoqchisiz? Kerakli turlarni belgilang:
               </p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="flex flex-wrap gap-2">
                 <button 
                   onClick={() => saveSurvey({ ...survey, text: !survey.text })}
-                  className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all flex items-center gap-2 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                     survey.text 
                       ? 'bg-amber-500/10 border-amber-500/50 text-amber-400' 
-                      : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:border-gray-600'
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
                   }`}
                 >
-                  <FileText size={14} /> Matn
+                  <FileText size={13} /> Matn
                 </button>
                 <button 
                   onClick={() => saveSurvey({ ...survey, image: !survey.image })}
-                  className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all flex items-center gap-2 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                     survey.image 
                       ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' 
-                      : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:border-gray-600'
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
                   }`}
                 >
-                  <ImageIcon size={14} /> Rasm
-                </button>
-                <button 
-                  onClick={() => saveSurvey({ ...survey, datetime: !survey.datetime })}
-                  className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all flex items-center gap-2 ${
-                    survey.datetime 
-                      ? 'bg-blue-500/10 border-blue-500/50 text-blue-400' 
-                      : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:border-gray-600'
-                  }`}
-                >
-                  <Clock size={14} /> Vaqt
-                </button>
-                <button 
-                  onClick={() => saveSurvey({ ...survey, todo: !survey.todo })}
-                  className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all flex items-center gap-2 ${
-                    survey.todo 
-                      ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' 
-                      : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:border-gray-600'
-                  }`}
-                >
-                  <CheckSquare size={14} /> Vazifalar
+                  <ImageIcon size={13} /> Rasm
                 </button>
                 <button 
                   onClick={() => saveSurvey({ ...survey, link: !survey.link })}
-                  className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all flex items-center gap-2 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
                     survey.link 
                       ? 'bg-rose-500/10 border-rose-500/50 text-rose-400' 
-                      : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:border-gray-600'
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
                   }`}
                 >
-                  <LinkIcon size={14} /> Havolalar
+                  <LinkIcon size={13} /> Havola
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Card 3: Ma'lumot qo'shish / Form (Col span 12) */}
+          {/* Card 3: Direct Link Ulashish / Share Bento Widget (Col span 4) */}
+          <div className="bento-card col-span-12 md:col-span-4 p-6 fade-in" style={{ '--card-accent': '#f43f5e', animationDelay: '0.15s' } as React.CSSProperties}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="icon-badge" style={{ '--badge-color': '#f43f5e', '--badge-bg': '#f43f5e15' } as React.CSSProperties}>
+                  <Share2 size={18} />
+                </div>
+                <h2 className="text-lg font-bold text-white">Direct Link Ulashish</h2>
+              </div>
+              <a href="/share" className="text-xs text-rose-400 hover:underline flex items-center gap-1">
+                To'liq sahifa <ExternalLink size={10} />
+              </a>
+            </div>
+
+            {generatedShareUrl ? (
+              <div className="space-y-2 mt-3">
+                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+                  <Check size={14} /> Link tayyor!
+                </p>
+                <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-[11px] font-mono text-gray-300 truncate">
+                  {generatedShareUrl}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={copyShareLink}
+                    className="flex-1 py-1.5 rounded-lg bg-rose-500 text-black font-bold text-xs flex items-center justify-center gap-1"
+                  >
+                    {copiedShare ? 'Nusxalandi!' : <><Copy size={12} /> Nusxalash</>}
+                  </button>
+                  <button
+                    onClick={() => setGeneratedShareUrl(null)}
+                    className="px-3 py-1.5 rounded-lg border border-zinc-700 text-xs text-gray-400 hover:text-white"
+                  >
+                    Yangi
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateShare} className="space-y-2.5 mt-2">
+                <input
+                  type="text"
+                  required
+                  placeholder="Ulashish sarlavhasi..."
+                  value={shareTitle}
+                  onChange={(e) => setShareTitle(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
+                />
+                <input
+                  type="text"
+                  required
+                  placeholder={shareType === 'image' ? 'Rasm URL...' : shareType === 'link' ? 'https://...' : 'Matn...'}
+                  value={shareContent}
+                  onChange={(e) => setShareContent(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={isSharing || !shareTitle.trim() || !shareContent.trim()}
+                  className="w-full py-2 bg-rose-500 hover:bg-rose-600 font-bold text-black text-xs rounded-lg flex items-center justify-center gap-1 transition-all disabled:opacity-50"
+                >
+                  {isSharing ? 'Yaratilmoqda...' : <><Send size={12} /> Link Yaratish</>}
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* Card 4: Yangi Qayd Qo'shish Form (Col span 12) */}
           <div className="bento-card col-span-12 p-6 fade-in" style={{ animationDelay: '0.2s' }}>
-            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-              <Plus size={20} /> Yangi Qayd Qo'shish
+            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Plus size={18} /> Yangi Qayd Qo'shish
             </h2>
             
             <form onSubmit={handleAddItem} className="space-y-4">
@@ -332,58 +449,44 @@ export default function Home() {
                 
                 {/* Select Type */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-2">Qayd Turi</label>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Qayd Turi</label>
                   <div className="flex flex-wrap gap-2">
                     {survey.text && (
                       <button
                         type="button"
-                        onClick={() => handleTypeChange('text')}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                          type === 'text' ? 'bg-amber-500 text-black border-amber-500' : 'bg-zinc-800 border-zinc-700 text-white'
+                        onClick={() => { setType('text'); setColor('#f59e0b'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          type === 'text' 
+                            ? 'bg-amber-500 border-amber-500 text-black' 
+                            : 'bg-zinc-900 border-zinc-700 text-gray-400'
                         }`}
                       >
                         Matn
                       </button>
                     )}
+
                     {survey.image && (
                       <button
                         type="button"
-                        onClick={() => handleTypeChange('image')}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                          type === 'image' ? 'bg-purple-500 text-black border-purple-500' : 'bg-zinc-800 border-zinc-700 text-white'
+                        onClick={() => { setType('image'); setColor('#a855f7'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          type === 'image' 
+                            ? 'bg-purple-500 border-purple-500 text-black' 
+                            : 'bg-zinc-900 border-zinc-700 text-gray-400'
                         }`}
                       >
                         Rasm
                       </button>
                     )}
-                    {survey.datetime && (
-                      <button
-                        type="button"
-                        onClick={() => handleTypeChange('datetime')}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                          type === 'datetime' ? 'bg-blue-500 text-black border-blue-500' : 'bg-zinc-800 border-zinc-700 text-white'
-                        }`}
-                      >
-                        Vaqt
-                      </button>
-                    )}
-                    {survey.todo && (
-                      <button
-                        type="button"
-                        onClick={() => handleTypeChange('todo')}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                          type === 'todo' ? 'bg-emerald-500 text-black border-emerald-500' : 'bg-zinc-800 border-zinc-700 text-white'
-                        }`}
-                      >
-                        Vazifa
-                      </button>
-                    )}
+
                     {survey.link && (
                       <button
                         type="button"
-                        onClick={() => handleTypeChange('link')}
-                        className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
-                          type === 'link' ? 'bg-rose-500 text-black border-rose-500' : 'bg-zinc-800 border-zinc-700 text-white'
+                        onClick={() => { setType('link'); setColor('#f43f5e'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                          type === 'link' 
+                            ? 'bg-rose-500 border-rose-500 text-black' 
+                            : 'bg-zinc-900 border-zinc-700 text-gray-400'
                         }`}
                       >
                         Havola
@@ -394,232 +497,284 @@ export default function Home() {
 
                 {/* Title */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-2">Sarlavha</label>
-                  <input
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Sarlavha</label>
+                  <input 
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Mavzu yoki sarlavha..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500"
+                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
                   />
                 </div>
 
-                {/* Sender Name */}
+                {/* Sender */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-2">Yuboruvchi ismi</label>
-                  <input
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Yuboruvchi ismi</label>
+                  <input 
                     type="text"
                     value={sender}
                     onChange={(e) => setSender(e.target.value)}
                     placeholder="Ismingiz..."
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500"
+                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
                   />
                 </div>
+
               </div>
 
-              {/* Dynamic Sub-inputs based on Selected Type */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Content Input (Required for Text, Link Description, etc) */}
+              {/* Dynamic input based on type */}
+              {type === 'image' && (
                 <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-2">Batafsil matn / Tavsif</label>
-                  <textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Qayd mazmunini yozing..."
-                    rows={3}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500"
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Rasm URL Manzili</label>
+                  <input 
+                    type="url"
+                    required
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
                   />
                 </div>
+              )}
 
-                {/* Type specific inputs */}
-                <div className="space-y-4">
-                  {type === 'image' && (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-2">Rasm URL manzili</label>
-                      <input
-                        type="url"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        placeholder="https://example.com/image.jpg"
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500"
-                      />
-                    </div>
-                  )}
-
-                  {type === 'datetime' && (
-                    <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-2">Belgilangan vaqt / Deadline</label>
-                      <input
-                        type="datetime-local"
-                        required
-                        value={targetTime}
-                        onChange={(e) => setTargetTime(e.target.value)}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500"
-                      />
-                    </div>
-                  )}
-
-                  {/* Preset Colors selector */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-2">Kartaning Rangi</label>
-                    <div className="flex gap-2">
-                      {['#f59e0b', '#a855f7', '#3b82f6', '#10b981', '#f43f5e', '#ffffff'].map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setColor(c)}
-                          className={`w-6 h-6 rounded-full border-2 transition-all ${
-                            color === c ? 'border-white scale-110' : 'border-transparent'
-                          }`}
-                          style={{ backgroundColor: c }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
+              {/* Content Description */}
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                  {type === 'link' ? 'Havola URL manzili' : 'Batafsil matn / Tavsif'}
+                </label>
+                <textarea 
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder={type === 'link' ? 'https://example.com' : "Qayd mazmunini yozing..."}
+                  rows={2}
+                  className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors resize-none"
+                />
               </div>
 
-              <div className="flex justify-end pt-2">
+              {/* Submit */}
+              <div className="flex justify-between items-center pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 font-medium">Rang:</span>
+                  {['#f59e0b', '#3b82f6', '#a855f7', '#10b981', '#f43f5e', '#ffffff'].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setColor(c)}
+                      className={`w-5 h-5 rounded-full transition-transform ${color === c ? 'scale-125 ring-2 ring-white' : 'opacity-70 hover:opacity-100'}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="neon-btn bg-white hover:bg-zinc-200 text-black py-2 px-5 text-sm font-semibold rounded-lg flex items-center gap-2"
+                  disabled={isSubmitting || !title.trim()}
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                  style={{ backgroundColor: color }}
                 >
-                  {isSubmitting ? 'Saqlanmoqda...' : 'Saqlash'} <Plus size={16} />
+                  {isSubmitting ? 'Saqlanmoqda...' : 'Saqlash +'}
                 </button>
               </div>
             </form>
           </div>
 
-          {/* Cards Section */}
-          <div className="col-span-12 mt-4">
-            <h3 className="text-lg font-bold text-white mb-6">Saqlangan Qaydlar</h3>
-            
-            {errorState && (
-              <div className="mb-6 p-4 bg-rose-900/30 border border-rose-500/50 rounded-xl text-rose-200 text-xs">
-                <strong>Xatolik (Database):</strong> {errorState}
-              </div>
-            )}
-            
-            {loading ? (
-              <div className="text-center py-10 text-gray-500">Yuklanmoqda...</div>
-            ) : filteredItems.length === 0 ? (
-              <div className="text-center py-12 bg-zinc-900/50 rounded-2xl border border-zinc-800 text-gray-500">
-                Hozircha qaydlar mavjud emas. Yuqoridagi formadan qo'shing.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredItems.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className={`bento-card card-highlight relative flex flex-col justify-between p-6 min-h-[220px] transition-all duration-300 ${
-                      item.is_completed ? 'opacity-50' : ''
-                    }`}
-                    style={{ '--card-accent': item.color } as React.CSSProperties}
-                  >
-                    
-                    {/* Header */}
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="icon-badge" style={{ '--badge-color': item.color, '--badge-bg': `${item.color}15` } as React.CSSProperties}>
-                        {renderIcon(item.icon, item.color)}
-                      </div>
-                      
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        {item.type === 'todo' && (
-                          <button
-                            onClick={() => handleToggleComplete(item.id, item.is_completed)}
-                            className={`p-1.5 rounded-lg border transition-all ${
-                              item.is_completed 
-                                ? 'bg-emerald-500 border-emerald-500 text-black' 
-                                : 'border-zinc-700 hover:border-emerald-500 text-gray-400 hover:text-emerald-400'
-                            }`}
-                            title={item.is_completed ? "Bajarilmadi deb belgilash" : "Bajarildi deb belgilash"}
-                          >
-                            <Check size={14} />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="p-1.5 border border-zinc-700 hover:border-rose-500 rounded-lg text-gray-400 hover:text-rose-500 transition-all"
-                          title="O'chirish"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Content Body */}
-                    <div className="flex-grow">
-                      <h4 className={`text-base font-bold text-white mb-2 ${item.is_completed ? 'line-through text-gray-500' : ''}`}>
-                        {item.title}
-                      </h4>
-                      
-                      {item.content && (
-                        <p className={`text-xs text-gray-400 mb-4 leading-relaxed ${item.is_completed ? 'line-through text-gray-600' : ''}`}>
-                          {item.content}
-                        </p>
-                      )}
-
-                      {/* Image Preview */}
-                      {item.type === 'image' && item.image_url && (
-                        <div className="w-full h-32 rounded-lg overflow-hidden border border-zinc-800 mb-4">
-                          <img 
-                            src={item.image_url} 
-                            alt={item.title} 
-                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                          />
-                        </div>
-                      )}
-
-                      {/* Time display */}
-                      {item.type === 'datetime' && item.target_time && (
-                        <div className="flex items-center gap-2 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 w-fit" style={{ color: item.color }}>
-                          <Clock size={12} />
-                          {new Date(item.target_time).toLocaleString('uz-UZ', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-4 flex justify-between items-center text-[10px] text-gray-500 border-t border-zinc-900 pt-3">
-                      <div className="flex items-center gap-1">
-                        <User size={10} style={{ color: item.color }} />
-                        <span className="font-semibold text-gray-400">{item.sender || 'Anonim'}</span>
-                        <span className="mx-1">•</span>
-                        <span>{new Date(item.created_at).toLocaleDateString()}</span>
-                      </div>
-                      
-                      {item.type === 'link' && item.content && (
-                        <a 
-                          href={item.content.startsWith('http') ? item.content : `https://${item.content}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="flex items-center gap-1 hover:text-white font-medium transition-colors"
-                        >
-                          O'tish <ExternalLink size={10} />
-                        </a>
-                      )}
-                    </div>
-
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
         </div>
 
+        {/* Saved Notes Section Header */}
+        <div className="mt-12 mb-6 flex items-center justify-between">
+          <h2 className="text-2xl font-extrabold text-white tracking-tight">
+            Saqlangan Qaydlar
+          </h2>
+          <a
+            href="/share"
+            className="text-xs font-semibold text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1 bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-xl"
+          >
+            <Share2 size={13} /> Link Orqali Ulashish (/share)
+          </a>
+        </div>
+
+        {/* Notes Bento List Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="h-44 bg-zinc-900/50 rounded-2xl animate-pulse border border-zinc-800" />
+            ))}
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="text-center py-12 bg-zinc-900/40 rounded-2xl border border-zinc-800 text-gray-500 text-sm">
+            Hozircha qaydlar mavjud emas. Yuqoridagi formadan qo'shing.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredItems.map((item) => (
+              <div 
+                key={item.id} 
+                className="bento-card card-highlight relative flex flex-col justify-between p-6 min-h-[200px] transition-all duration-300"
+                style={{ '--card-accent': item.color } as React.CSSProperties}
+              >
+                {/* Card Header */}
+                <div className="flex justify-between items-start mb-3">
+                  <div className="icon-badge" style={{ '--badge-color': item.color, '--badge-bg': `${item.color}15` } as React.CSSProperties}>
+                    {renderIcon(item.icon, item.color)}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleOpenEdit(item)}
+                      className="p-1.5 border border-zinc-700 hover:border-blue-500 rounded-lg text-gray-400 hover:text-blue-400 transition-all"
+                      title="Tahrirlash"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="p-1.5 border border-zinc-700 hover:border-rose-500 rounded-lg text-gray-400 hover:text-rose-500 transition-all"
+                      title="O'chirish"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content Body */}
+                <div className="flex-1">
+                  <h3 className="text-base font-bold text-white mb-1.5 line-clamp-1">
+                    {item.title}
+                  </h3>
+
+                  {item.type === 'image' && item.image_url && (
+                    <div className="w-full h-32 rounded-lg overflow-hidden my-2 border border-zinc-800 bg-zinc-900">
+                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  {item.content && (
+                    <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">
+                      {item.content}
+                    </p>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="mt-4 flex justify-between items-center text-[10px] text-gray-500 border-t border-zinc-900 pt-3">
+                  <div className="flex items-center gap-1">
+                    <User size={10} style={{ color: item.color }} />
+                    <span className="font-semibold text-gray-400">{item.sender || 'Anonim'}</span>
+                    <span className="mx-1">•</span>
+                    <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                  </div>
+                  
+                  {item.type === 'link' && item.content && (
+                    <a 
+                      href={item.content.startsWith('http') ? item.content : `https://${item.content}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="flex items-center gap-1 hover:text-white font-medium transition-colors"
+                    >
+                      O'tish <ExternalLink size={10} />
+                    </a>
+                  )}
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
+
       </main>
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEditingItem(null); }}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
+            style={{ backgroundColor: '#18181b', borderColor: `${editingItem.color}40` }}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: `${editingItem.color}20` }}
+                >
+                  <Pencil size={16} style={{ color: editingItem.color }} />
+                </div>
+                <h3 className="text-base font-bold text-white">Qaydni tahrirlash</h3>
+              </div>
+              <button
+                onClick={() => setEditingItem(null)}
+                className="p-1.5 rounded-lg border border-zinc-700 text-gray-400 hover:text-white transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">Sarlavha</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">Mazmun</label>
+                <textarea
+                  value={editForm.content}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, content: e.target.value }))}
+                  className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none resize-none"
+                  rows={3}
+                />
+              </div>
+
+              {editingItem.type === 'image' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Rasm URL</label>
+                  <input
+                    type="url"
+                    value={editForm.image_url}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, image_url: e.target.value }))}
+                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1.5">Yuboruvchi ismi</label>
+                <input
+                  type="text"
+                  value={editForm.sender}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, sender: e.target.value }))}
+                  className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setEditingItem(null)}
+                className="px-4 py-2 rounded-lg border border-zinc-700 text-gray-400 text-xs font-medium"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isSavingEdit || !editForm.title.trim()}
+                className="px-5 py-2 rounded-lg text-xs font-semibold disabled:opacity-50"
+                style={{ backgroundColor: editingItem.color, color: '#09090b' }}
+              >
+                {isSavingEdit ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

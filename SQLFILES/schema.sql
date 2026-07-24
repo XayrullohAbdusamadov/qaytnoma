@@ -15,10 +15,3 @@ CREATE TABLE IF NOT EXISTS qaytnoma_items (
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE qaytnoma_items ENABLE ROW LEVEL SECURITY;
-
--- Create policy to allow all actions for anonymous access (since we are using client publishable key without auth)
-CREATE POLICY "Allow public full access" ON qaytnoma_items
-    FOR ALL
-    TO anon
-    USING (true)
-    WITH CHECK (true);
