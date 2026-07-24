@@ -11,7 +11,9 @@ import {
   Send,
   ArrowLeft,
   User,
-  Clock
+  Clock,
+  Upload,
+  X
 } from 'lucide-react';
 
 type ShareType = 'text' | 'image' | 'link';
@@ -48,6 +50,28 @@ export default function SharePage() {
   const [isCreating, setIsCreating] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  
+  // Image Upload Mode State
+  const [uploadMode, setUploadMode] = useState<'url' | 'file'>('url');
+
+  // Image File Upload Handler
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Rasm hajmi juda katta (maksimal 2MB bo'lishi kerak)");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setContent(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const cfg = TYPE_CONFIG[type];
   const Icon = cfg.icon;
@@ -257,32 +281,94 @@ export default function SharePage() {
 
               {/* Content */}
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-2">{cfg.contentLabel}</label>
-                {type === 'text' ? (
-                  <textarea
-                    required
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder={cfg.placeholder}
-                    rows={4}
-                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors resize-none"
-                  />
+                {type === 'image' ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-medium text-gray-400">{cfg.contentLabel}</label>
+                      <div className="flex gap-2 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => { setUploadMode('url'); setContent(''); }}
+                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                            uploadMode === 'url' ? 'bg-purple-500 text-black' : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          URL Havola
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setUploadMode('file'); setContent(''); }}
+                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                            uploadMode === 'file' ? 'bg-purple-500 text-black' : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          Fayl yuklash
+                        </button>
+                      </div>
+                    </div>
+
+                    {uploadMode === 'url' ? (
+                      <input
+                        type="url"
+                        required
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder={cfg.placeholder}
+                        className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors"
+                      />
+                    ) : (
+                      <div className="relative border-2 border-dashed border-zinc-700 rounded-xl p-6 hover:border-purple-500/50 transition-colors bg-zinc-900/40 text-center cursor-pointer group">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                          <Upload size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
+                          <span className="text-xs text-gray-300 font-medium">Rasm faylini tanlang</span>
+                          <span className="text-[10px] text-gray-500 font-mono">PNG, JPG, WEBP, GIF (Maks. 2MB)</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <input
-                    type={type === 'link' ? 'url' : 'url'}
-                    required
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder={cfg.placeholder}
-                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors"
-                  />
+                  <>
+                    <label className="block text-xs font-medium text-gray-400 mb-2">{cfg.contentLabel}</label>
+                    {type === 'text' ? (
+                      <textarea
+                        required
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder={cfg.placeholder}
+                        rows={4}
+                        className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors resize-none"
+                      />
+                    ) : (
+                      <input
+                        type="url"
+                        required
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder={cfg.placeholder}
+                        className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors"
+                      />
+                    )}
+                  </>
                 )}
               </div>
 
               {/* Image Preview */}
               {type === 'image' && content && (
-                <div className="w-full h-40 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900">
+                <div className="relative w-full h-40 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900">
                   <img src={content} alt="Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setContent('')}
+                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black text-gray-300 hover:text-white transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
               )}
 

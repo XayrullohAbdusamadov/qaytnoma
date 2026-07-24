@@ -21,7 +21,8 @@ import {
   Send,
   Globe,
   RotateCcw,
-  Bookmark
+  Bookmark,
+  Upload
 } from 'lucide-react';
 
 interface QaytnomaItem {
@@ -78,6 +79,33 @@ export default function Home() {
   const [editingItem, setEditingItem] = useState<QaytnomaItem | null>(null);
   const [editForm, setEditForm] = useState({ title: '', content: '', sender: '', image_url: '' });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Image Upload Mode States
+  const [uploadMode, setUploadMode] = useState<'url' | 'file'>('url');
+  const [shareUploadMode, setShareUploadMode] = useState<'url' | 'file'>('url');
+  const [editUploadMode, setEditUploadMode] = useState<'url' | 'file'>('url');
+
+  // Image File Upload Helper
+  const handleImageFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: (value: string) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Rasm hajmi juda katta (maksimal 2MB bo'lishi kerak)");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setter(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Share individual card data
   const handleShareCard = async (item: QaytnomaItem) => {
@@ -255,6 +283,11 @@ export default function Home() {
       sender: item.sender || '',
       image_url: item.image_url || '',
     });
+    if (item.image_url && item.image_url.startsWith('data:image/')) {
+      setEditUploadMode('file');
+    } else {
+      setEditUploadMode('url');
+    }
   };
 
   // Save Edit to Supabase
@@ -461,6 +494,26 @@ export default function Home() {
               </div>
             ) : (
               <form onSubmit={handleCreateShare} className="space-y-2.5 mt-2">
+                <div className="flex gap-1.5 p-0.5 bg-zinc-950 rounded-lg border border-zinc-850">
+                  {(['text', 'image', 'link'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => {
+                        setShareType(t);
+                        setShareContent('');
+                      }}
+                      className={`flex-1 py-1 rounded-md text-[10px] font-bold capitalize transition-all ${
+                        shareType === t 
+                          ? 'bg-rose-500 text-black' 
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {t === 'text' ? 'Matn' : t === 'image' ? 'Rasm' : 'Havola'}
+                    </button>
+                  ))}
+                </div>
+
                 <input
                   type="text"
                   required
@@ -469,14 +522,81 @@ export default function Home() {
                   onChange={(e) => setShareTitle(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
                 />
-                <input
-                  type="text"
-                  required
-                  placeholder={shareType === 'image' ? 'Rasm URL...' : shareType === 'link' ? 'https://...' : 'Matn...'}
-                  value={shareContent}
-                  onChange={(e) => setShareContent(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
-                />
+
+                {shareType === 'image' ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-gray-400 font-semibold">Yuklash turi</span>
+                      <div className="flex gap-1 bg-zinc-950 p-0.5 rounded-lg border border-zinc-850">
+                        <button
+                          type="button"
+                          onClick={() => { setShareUploadMode('url'); setShareContent(''); }}
+                          className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                            shareUploadMode === 'url' ? 'bg-rose-500 text-black' : 'text-gray-400'
+                          }`}
+                        >
+                          URL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShareUploadMode('file'); setShareContent(''); }}
+                          className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                            shareUploadMode === 'file' ? 'bg-rose-500 text-black' : 'text-gray-400'
+                          }`}
+                        >
+                          Fayl
+                        </button>
+                      </div>
+                    </div>
+
+                    {shareUploadMode === 'url' ? (
+                      <input
+                        type="url"
+                        required
+                        placeholder="Rasm URL manzili..."
+                        value={shareContent}
+                        onChange={(e) => setShareContent(e.target.value)}
+                        className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
+                      />
+                    ) : (
+                      <div className="relative border border-dashed border-zinc-750 hover:border-rose-500 rounded-lg p-3 bg-zinc-900/40 text-center cursor-pointer group">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleImageFileChange(e, setShareContent)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <div className="flex flex-col items-center justify-center gap-1 pointer-events-none">
+                          <Upload size={14} className="text-gray-400 group-hover:text-rose-450 transition-colors" />
+                          <span className="text-[10px] text-gray-300 font-medium">Rasm faylini tanlang</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {shareContent && (
+                      <div className="relative w-full h-16 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/50">
+                        <img src={shareContent} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setShareContent('')}
+                          className="absolute top-1 right-1 p-0.5 rounded bg-black/60 hover:bg-black text-gray-300 hover:text-white"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    placeholder={shareType === 'link' ? 'https://...' : 'Matn...'}
+                    value={shareContent}
+                    onChange={(e) => setShareContent(e.target.value)}
+                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
+                  />
+                )}
+
                 <div className="flex gap-2">
                   <button
                     type="submit"
@@ -586,16 +706,68 @@ export default function Home() {
 
               {/* Dynamic input based on type */}
               {type === 'image' && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Rasm URL Manzili</label>
-                  <input 
-                    type="url"
-                    required
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-medium text-gray-400">Rasm yuklash usuli</label>
+                    <div className="flex gap-2 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
+                      <button
+                        type="button"
+                        onClick={() => { setUploadMode('url'); }}
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                          uploadMode === 'url' ? 'bg-purple-500 text-black' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        URL Havola
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setUploadMode('file'); }}
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                          uploadMode === 'file' ? 'bg-purple-500 text-black' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Fayl yuklash
+                      </button>
+                    </div>
+                  </div>
+
+                  {uploadMode === 'url' ? (
+                    <input 
+                      type="url"
+                      required={!imageUrl}
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
+                    />
+                  ) : (
+                    <div className="relative border-2 border-dashed border-zinc-700 rounded-xl p-4 hover:border-purple-500/50 transition-colors bg-zinc-900/40 text-center cursor-pointer group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageFileChange(e, setImageUrl)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                        <Upload size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
+                        <span className="text-xs text-gray-300 font-medium">Rasm faylini tanlang</span>
+                        <span className="text-[10px] text-gray-500 font-mono">PNG, JPG, WEBP, GIF (Maks. 2MB)</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {imageUrl && (
+                    <div className="relative w-full h-24 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/50">
+                      <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl('')}
+                        className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-black text-gray-300 hover:text-white transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -837,14 +1009,67 @@ export default function Home() {
               </div>
 
               {editingItem.type === 'image' && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">Rasm URL</label>
-                  <input
-                    type="url"
-                    value={editForm.image_url}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, image_url: e.target.value }))}
-                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none"
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-medium text-gray-400">Rasm yuklash usuli</label>
+                    <div className="flex gap-2 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
+                      <button
+                        type="button"
+                        onClick={() => { setEditUploadMode('url'); }}
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                          editUploadMode === 'url' ? 'bg-purple-500 text-black' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        URL Havola
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEditUploadMode('file'); }}
+                        className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                          editUploadMode === 'file' ? 'bg-purple-500 text-black' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        Fayl yuklash
+                      </button>
+                    </div>
+                  </div>
+
+                  {editUploadMode === 'url' ? (
+                    <input
+                      type="url"
+                      value={editForm.image_url}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, image_url: e.target.value }))}
+                      className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none"
+                      placeholder="https://..."
+                    />
+                  ) : (
+                    <div className="relative border-2 border-dashed border-zinc-700 rounded-xl p-4 hover:border-purple-500/50 transition-colors bg-zinc-900/40 text-center cursor-pointer group">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageFileChange(e, (val) => setEditForm(prev => ({ ...prev, image_url: val })))}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                        <Upload size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
+                        <span className="text-xs text-gray-300 font-medium">Rasm faylini tanlang</span>
+                        <span className="text-[10px] text-gray-500 font-mono">PNG, JPG, WEBP, GIF (Maks. 2MB)</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {editForm.image_url && (
+                    <div className="relative w-full h-24 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/50">
+                      <img src={editForm.image_url} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(prev => ({ ...prev, image_url: '' }))}
+                        className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-black text-gray-300 hover:text-white transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
