@@ -219,112 +219,249 @@ export default function Home() {
   };
 
   const handleDownloadCard = async (item: QaytnomaItem) => {
-    const cleanFileName = item.title.replace(/[/\\?%*:|"<>]/g, '-'); // sanitize filename
+    let fileNameSource = item.title || item.content || 'qayd';
+    if (fileNameSource.length > 50) {
+      fileNameSource = fileNameSource.substring(0, 50);
+    }
+    const cleanFileName = fileNameSource.replace(/[/\\?%*:|"<>]/g, '-').trim(); // sanitize filename
     
     if (item.type === 'image' && item.image_url) {
-      try {
-        const zip = new JSZip();
-
-        // 1. Prepare metadata text content
-        let text = `SARLAVHA: ${item.title}\n`;
-        text += `Tur: RASM\n`;
-        text += `Yuboruvchi: ${item.sender || 'Anonim'}\n`;
-        text += `Sana: ${new Date(item.created_at).toLocaleString('uz-UZ')}\n`;
-        if (item.content) {
-          text += `Mazmuni:\n${item.content}\n`;
-        }
-
-        // Add text to ZIP
-        zip.file(`${cleanFileName}-ma'lumotlari.txt`, text);
-
-        // 2. Fetch and add the image to ZIP
-        if (item.image_url.startsWith('data:image/')) {
-          const parts = item.image_url.split(',');
-          const base64Data = parts[1];
-          const mimeType = parts[0].split(';')[0].split(':')[1];
-          const ext = mimeType.split('/')[1] || 'png';
-          zip.file(`${cleanFileName}.${ext}`, base64Data, { base64: true });
-        } else {
-          // Fetch remote image
+      // Convert image to base64 Data URL to make the HTML self-contained/offline-friendly
+      let finalImageUrl = item.image_url;
+      if (!item.image_url.startsWith('data:')) {
+        try {
           const res = await fetch(item.image_url, { mode: 'cors' });
-          if (!res.ok) throw new Error('Image fetch failed');
-          const blob = await res.blob();
-          const contentType = res.headers.get('Content-Type') || 'image/png';
-          const ext = contentType.split('/')[1] || 'png';
-          zip.file(`${cleanFileName}.${ext}`, blob);
-        }
-
-        // 3. Generate and download ZIP file
-        const contentBlob = await zip.generateAsync({ type: 'blob' });
-        const blobUrl = URL.createObjectURL(contentBlob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `${cleanFileName}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(blobUrl);
-      } catch (err) {
-        console.error("ZIP creation failed, falling back to separate files:", err);
-        
-        // Fallback to separate files if anything fails
-        // Image Download
-        if (item.image_url.startsWith('data:image/')) {
-          const ext = item.image_url.substring("data:image/".length, item.image_url.indexOf(";base64")) || 'png';
-          const a = document.createElement('a');
-          a.href = item.image_url;
-          a.download = `${cleanFileName}.${ext}`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        } else {
-          try {
-            const res = await fetch(item.image_url, { mode: 'cors' });
+          if (res.ok) {
             const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = `${cleanFileName}.png`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(blobUrl);
-          } catch (corsErr) {
-            console.error("CORS fetch failed, opening in new tab:", corsErr);
-            window.open(item.image_url, '_blank');
+            finalImageUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
           }
+        } catch (err) {
+          console.error("Failed to convert image to base64, using original URL:", err);
         }
-
-        // Text Download
-        let text = `SARLAVHA: ${item.title}\n`;
-        text += `Tur: RASM\n`;
-        text += `Yuboruvchi: ${item.sender || 'Anonim'}\n`;
-        text += `Sana: ${new Date(item.created_at).toLocaleString()}\n`;
-        if (item.content) {
-          text += `Mazmuni:\n${item.content}\n`;
-        }
-        const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `${cleanFileName}-ma'lumotlari.txt`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
       }
+
+      const htmlContent = `<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${item.title || 'Qaydnoma'}</title>
+  <style>
+    body {
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card {
+      background-color: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: ${item.color || '#a855f7'};
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      color: #ffffff;
+    }
+    .image-container {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid #27272a;
+      background-color: #09090b;
+    }
+    .image-container img {
+      width: 100%;
+      display: block;
+      height: auto;
+      max-height: 450px;
+      object-fit: contain;
+    }
+    .content {
+      font-size: 14px;
+      color: #a1a1aa;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      white-space: pre-wrap;
+    }
+    .footer {
+      border-top: 1px solid #27272a;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #71717a;
+    }
+    .sender {
+      font-weight: 600;
+      color: #e4e4e7;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">${item.title || 'Rasmli Qayd'}</div>
+    <div class="image-container">
+      <img src="${finalImageUrl}" alt="${item.title || 'Qayd rasmi'}" />
+    </div>
+    ${item.content ? `<div class="content">${item.content}</div>` : ''}
+    <div class="footer">
+      <div>Yuboruvchi: <span class="sender">${item.sender || 'Anonim'}</span></div>
+      <div>${new Date(item.created_at).toLocaleDateString('uz-UZ')}</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const dataStr = "data:text/html;charset=utf-8," + encodeURIComponent(htmlContent);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `${cleanFileName}.html`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
     } else if (item.type === 'link' && item.content) {
       const targetUrl = item.content.startsWith('http') ? item.content : `https://${item.content}`;
       const htmlContent = `<!DOCTYPE html>
-<html>
+<html lang="uz">
 <head>
-  <meta charset="utf-8">
-  <title>Redirecting to ${item.title}</title>
-  <meta http-equiv="refresh" content="0; url=${targetUrl}">
-  <script>
-    window.location.href = "${targetUrl}";
-  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${item.title || 'Havola Qayd'}</title>
+  <style>
+    body {
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card {
+      background-color: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: ${item.color || '#f43f5e'};
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      color: #ffffff;
+    }
+    .link-container {
+      background-color: rgba(244, 63, 94, 0.05);
+      border: 1px solid rgba(244, 63, 94, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+    }
+    .url {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f43f5e;
+      word-break: break-all;
+      text-decoration: none;
+    }
+    .url:hover {
+      text-decoration: underline;
+    }
+    .btn-visit {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f43f5e;
+      color: #ffffff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+    .btn-visit:hover {
+      background-color: #e11d48;
+    }
+    .footer {
+      border-top: 1px solid #27272a;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #71717a;
+    }
+    .sender {
+      font-weight: 600;
+      color: #e4e4e7;
+    }
+  </style>
 </head>
 <body>
-  <p>Redirecting to <a href="${targetUrl}">${item.title}</a>...</p>
+  <div class="card">
+    <div class="title">${item.title || 'Havola Qayd'}</div>
+    <div class="link-container">
+      <a href="${targetUrl}" class="url" target="_blank" rel="noopener noreferrer">${item.content}</a>
+      <a href="${targetUrl}" class="btn-visit" target="_blank" rel="noopener noreferrer">Saytga o'tish →</a>
+    </div>
+    <div class="footer">
+      <div>Yuboruvchi: <span class="sender">${item.sender || 'Anonim'}</span></div>
+      <div>${new Date(item.created_at).toLocaleDateString('uz-UZ')}</div>
+    </div>
+  </div>
 </body>
 </html>`;
       const dataStr = "data:text/html;charset=utf-8," + encodeURIComponent(htmlContent);
