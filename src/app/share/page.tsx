@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import {
   FileText,
@@ -167,12 +168,12 @@ export default function SharePage() {
 
         {/* Header */}
         <header className="mb-8 fade-in">
-          <a
+          <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white transition-colors mb-6"
+            className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-white transition-colors mb-6 cursor-pointer"
           >
             <ArrowLeft size={14} /> Qaytnomaga qaytish
-          </a>
+          </Link>
           <h1 className="text-3xl font-extrabold tracking-tight text-white mb-1">
             Ulashish
           </h1>

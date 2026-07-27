@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import NetworkBackground from '@/components/NetworkBackground';
 import { 
@@ -22,7 +23,8 @@ import {
   Globe,
   RotateCcw,
   Bookmark,
-  Upload
+  Upload,
+  Download
 } from 'lucide-react';
 
 interface QaytnomaItem {
@@ -58,27 +60,12 @@ export default function Home() {
     link: true,
   });
 
-  // Main Form State
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [type, setType] = useState<'text' | 'image' | 'link'>('text');
-  const [imageUrl, setImageUrl] = useState('');
-  const [color, setColor] = useState('#f59e0b');
-  const [sender, setSender] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Quick Share Form State (Bento Share block)
-  const [shareType, setShareType] = useState<'text' | 'image' | 'link'>('text');
-  const [shareTitle, setShareTitle] = useState('');
-  const [shareContent, setShareContent] = useState('');
-  const [shareSender, setShareSender] = useState('');
-  const [isSharing, setIsSharing] = useState(false);
-  const [generatedShareUrl, setGeneratedShareUrl] = useState<string | null>(null);
-  const [copiedShare, setCopiedShare] = useState(false);
-
   // Vercel link copy state
   const vercelUrl = 'https://qaydnoma-six.vercel.app/';
   const [copiedVercel, setCopiedVercel] = useState(false);
+
+  // Main Page Link Copy State
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Card Share states
   const [sharingItemId, setSharingItemId] = useState<string | null>(null);
@@ -90,11 +77,9 @@ export default function Home() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Image Upload Mode States
-  const [uploadMode, setUploadMode] = useState<'url' | 'file'>('url');
-  const [shareUploadMode, setShareUploadMode] = useState<'url' | 'file'>('url');
   const [editUploadMode, setEditUploadMode] = useState<'url' | 'file'>('url');
 
-  // Image File Upload Helper
+  // Image File Upload Helper (for Edit modal)
   const handleImageFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     setter: (value: string) => void
@@ -216,109 +201,52 @@ export default function Home() {
     localStorage.setItem('qaytnoma_survey', JSON.stringify(newSurvey));
   };
 
-  const handleAddItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-
-    try {
-      setIsSubmitting(true);
-      let iconName = 'FileText';
-      if (type === 'image') iconName = 'ImageIcon';
-      if (type === 'link') iconName = 'LinkIcon';
-
-      const { error } = await supabase
-        .from('qaytnoma_items')
-        .insert([{
-          title: title.trim(),
-          content: content.trim() || null,
-          type,
-          image_url: type === 'image' ? (imageUrl.trim() || null) : null,
-          color,
-          icon: iconName,
-          sender: sender.trim() || 'Anonim',
-          is_completed: false
-        }]);
-
-      if (error) throw error;
-
-      setTitle('');
-      setContent('');
-      setImageUrl('');
-      setSender('');
-      fetchItems();
-    } catch (err) {
-      console.error('Error adding item:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Quick Share Creator Handler
-  const handleCreateShare = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!shareTitle.trim() || !shareContent.trim()) return;
-
-    try {
-      setIsSharing(true);
-      const insertData = {
-        type: shareType,
-        title: shareTitle.trim(),
-        content: shareContent.trim(),
-        image_url: shareType === 'image' ? shareContent.trim() : null,
-        sender: shareSender.trim() || 'Anonim',
-        short_id: generateShortId(),
-      };
-
-      let data: any = null;
-      let error = null;
-
-      const res = await supabase
-        .from('shared_items')
-        .insert([insertData])
-        .select('short_id, id')
-        .single();
-
-      error = res.error;
-      data = res.data;
-
-      if (error && error.message.includes('short_id')) {
-        // Fallback: retry without short_id
-        const fallbackInsert = { ...insertData };
-        delete (fallbackInsert as any).short_id;
-
-        const retryRes = await supabase
-          .from('shared_items')
-          .insert([fallbackInsert])
-          .select('id')
-          .single();
-
-        if (retryRes.error) throw retryRes.error;
-        data = retryRes.data as any;
-      } else if (error) {
-        throw error;
-      }
-
-      const linkId = data.short_id || data.id;
-      const link = `https://qaydnoma-six.vercel.app/share/${linkId}`;
-      setGeneratedShareUrl(link);
-    } catch (err) {
-      console.error('Share error:', err);
-    } finally {
-      setIsSharing(false);
-    }
-  };
-
   const copyVercelLink = async () => {
     await navigator.clipboard.writeText(vercelUrl);
     setCopiedVercel(true);
     setTimeout(() => setCopiedVercel(false), 2000);
   };
 
-  const copyShareLink = async () => {
-    if (!generatedShareUrl) return;
-    await navigator.clipboard.writeText(generatedShareUrl);
-    setCopiedShare(true);
-    setTimeout(() => setCopiedShare(false), 2000);
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
+
+  const handleDownloadNotes = () => {
+    if (items.length === 0) {
+      alert("Yuklab olish uchun qaydlar mavjud emas.");
+      return;
+    }
+    
+    let text = "QAYDNOMA - SAQLANGAN QAYDLAR\n";
+    text += `Sana: ${new Date().toLocaleString()}\n`;
+    text += "=========================================\n\n";
+    
+    items.forEach((item, index) => {
+      text += `${index + 1}. [${item.type.toUpperCase()}] ${item.title}\n`;
+      text += `Yuboruvchi: ${item.sender || 'Anonim'}\n`;
+      text += `Yaratilgan vaqt: ${new Date(item.created_at).toLocaleString()}\n`;
+      if (item.type === 'image' && item.image_url) {
+        text += `Rasm URL: ${item.image_url}\n`;
+      }
+      if (item.content) {
+        text += `Mazmuni: ${item.content}\n`;
+      }
+      text += "-----------------------------------------\n\n";
+    });
+    
+    const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "qaydlar.txt");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
   };
 
   // Delete Item
@@ -443,411 +371,50 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Bento Grid Layout (Symmetric Row Style) */}
+        {/* Navigation Action Bar */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 shadow-xl backdrop-blur-xl fade-in">
+          <div className="flex flex-wrap gap-2.5">
+            <Link
+              href="/add"
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-black bg-gradient-to-tr from-amber-500 via-purple-500 to-rose-500 hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Yangi Qayd Qo'shish</span>
+            </Link>
+            
+            <Link
+              href="/share"
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/85 hover:border-zinc-500 hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <Share2 size={14} />
+              <span>Link Yaratish</span>
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap gap-2.5">
+            <button
+              onClick={handleDownloadNotes}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white bg-zinc-900/80 border border-zinc-700/80 hover:border-zinc-500 transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Qaydlarni .txt fayl sifatida yuklab olish"
+            >
+              <Download size={14} />
+              <span>Yuklab Olish</span>
+            </button>
+
+            <button
+              onClick={handleCopyLink}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white bg-zinc-900/80 border border-zinc-700/80 hover:border-zinc-500 transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Sahifa havolasini nusxalash"
+            >
+              {copiedLink ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+              <span>{copiedLink ? 'Nusxalandi!' : 'Linkni Saqlash'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Bento Grid Layout (Symmetric Info and Filter Row) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
           
-          {/* Card 4: Yangi Qayd Qo'shish Form */}
-          <div className="bento-card col-span-12 lg:col-span-7 p-6 fade-in flex flex-col justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <Plus size={18} /> Yangi Qayd Qo'shish
-              </h2>
-              
-              <form onSubmit={handleAddItem} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  
-                  {/* Select Type */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1.5">Qayd Turi</label>
-                    <div className="flex flex-wrap gap-2">
-                      {survey.text && (
-                        <button
-                          type="button"
-                          onClick={() => { setType('text'); setColor('#f59e0b'); }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            type === 'text' 
-                              ? 'bg-amber-500 border-amber-500 text-black' 
-                              : 'bg-zinc-900 border-zinc-700 text-gray-400'
-                          }`}
-                        >
-                          Matn
-                        </button>
-                      )}
-
-                      {survey.image && (
-                        <button
-                          type="button"
-                          onClick={() => { setType('image'); setColor('#a855f7'); }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            type === 'image' 
-                              ? 'bg-purple-500 border-purple-500 text-black' 
-                              : 'bg-zinc-900 border-zinc-700 text-gray-400'
-                          }`}
-                        >
-                          Rasm
-                        </button>
-                      )}
-
-                      {survey.link && (
-                        <button
-                          type="button"
-                          onClick={() => { setType('link'); setColor('#f43f5e'); }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            type === 'link' 
-                              ? 'bg-rose-500 border-rose-500 text-black' 
-                              : 'bg-zinc-900 border-zinc-700 text-gray-400'
-                          }`}
-                        >
-                          Havola
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Title */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1.5">Sarlavha</label>
-                    <input 
-                      type="text"
-                      required
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Mavzu yoki sarlavha..."
-                      className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
-                    />
-                  </div>
-
-                  {/* Sender */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1.5">Yuboruvchi ismi</label>
-                    <input 
-                      type="text"
-                      value={sender}
-                      onChange={(e) => setSender(e.target.value)}
-                      placeholder="Ismingiz..."
-                      className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
-                    />
-                  </div>
-
-                </div>
-
-                {/* Dynamic input based on type */}
-                {type === 'image' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-medium text-gray-400">Rasm yuklash usuli</label>
-                      <div className="flex gap-2 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
-                        <button
-                          type="button"
-                          onClick={() => { setUploadMode('url'); }}
-                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                            uploadMode === 'url' ? 'bg-purple-500 text-black' : 'text-gray-400 hover:text-white'
-                          }`}
-                        >
-                          URL Havola
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setUploadMode('file'); }}
-                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
-                            uploadMode === 'file' ? 'bg-purple-500 text-black' : 'text-gray-400 hover:text-white'
-                          }`}
-                        >
-                          Fayl yuklash
-                        </button>
-                      </div>
-                    </div>
-
-                    {uploadMode === 'url' ? (
-                      <input 
-                        type="url"
-                        required={!imageUrl}
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        placeholder="https://..."
-                        className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors"
-                      />
-                    ) : (
-                      <div className="relative border-2 border-dashed border-zinc-700 rounded-xl p-4 hover:border-purple-500/50 transition-colors bg-zinc-900/40 text-center cursor-pointer group">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageFileChange(e, setImageUrl)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
-                          <Upload size={20} className="text-gray-400 group-hover:text-purple-400 transition-colors" />
-                          <span className="text-xs text-gray-300 font-medium">Rasm faylini tanlang</span>
-                          <span className="text-[10px] text-gray-500 font-mono">PNG, JPG, WEBP, GIF (Maks. 2MB)</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {imageUrl && (
-                      <div className="relative w-full h-24 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/50">
-                        <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => setImageUrl('')}
-                          className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-black text-gray-300 hover:text-white transition-colors"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Content Description */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                    {type === 'link' ? 'Havola URL manzili' : 'Batafsil matn / Tavsif'}
-                  </label>
-                  <textarea 
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder={type === 'link' ? 'https://example.com' : "Qayd mazmunini yozing..."}
-                    rows={2}
-                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-zinc-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors resize-none"
-                  />
-                </div>
-
-                {/* Submit */}
-                <div className="flex justify-between items-center pt-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400 font-medium">Rang:</span>
-                    {['#f59e0b', '#3b82f6', '#a855f7', '#10b981', '#f43f5e', '#ffffff'].map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setColor(c)}
-                        className={`w-5 h-5 rounded-full transition-transform ${color === c ? 'scale-125 ring-2 ring-white' : 'opacity-70 hover:opacity-100'}`}
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting || !title.trim()}
-                    className="px-5 py-2 rounded-xl text-xs font-bold text-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
-                    style={{ backgroundColor: color }}
-                  >
-                    {isSubmitting ? 'Saqlanmoqda...' : 'Saqlash +'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          {/* Card 3: Direct Link Ulashish / Share Bento Widget */}
-          <div className="bento-card col-span-12 lg:col-span-5 p-6 fade-in flex flex-col justify-between" style={{ '--card-accent': '#f43f5e', animationDelay: '0.15s' } as React.CSSProperties}>
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="icon-badge" style={{ '--badge-color': '#f43f5e', '--badge-bg': '#f43f5e15' } as React.CSSProperties}>
-                    <Share2 size={18} />
-                  </div>
-                  <h2 className="text-lg font-bold text-white">Direct Link Ulashish</h2>
-                </div>
-                <a href="/share" className="text-xs text-rose-400 hover:underline flex items-center gap-1">
-                  To'liq sahifa <ExternalLink size={10} />
-                </a>
-              </div>
-
-              {generatedShareUrl ? (
-                <div className="space-y-4 mt-3 fade-in">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-450 animate-pulse shadow-[0_0_8px_#10b981]"></span>
-                      Link tayyor!
-                    </span>
-                    <span className="text-[9px] uppercase font-mono tracking-wider text-zinc-500 font-extrabold">
-                      Qisqa Havola
-                    </span>
-                  </div>
-
-                  <div 
-                    onClick={copyShareLink}
-                    className="group relative bg-zinc-950 hover:bg-zinc-900 border border-zinc-850 hover:border-rose-500/40 rounded-xl p-3.5 transition-all duration-200 cursor-pointer shadow-inner flex items-center justify-between gap-3"
-                    title="Nusxalash uchun bosing"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block mb-0.5">Havola manzili</span>
-                      <div className="text-sm font-mono font-bold text-rose-400 truncate tracking-wide">
-                        {generatedShareUrl}
-                      </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-lg bg-zinc-900 group-hover:bg-rose-500/10 flex items-center justify-center text-zinc-400 group-hover:text-rose-400 transition-colors border border-zinc-800 group-hover:border-rose-500/20 flex-shrink-0 shadow-sm">
-                      {copiedShare ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={copyShareLink}
-                      className={`flex-1 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${
-                        copiedShare 
-                          ? 'bg-emerald-500 text-black shadow-emerald-500/10' 
-                          : 'bg-rose-500 hover:bg-rose-600 text-black'
-                      }`}
-                    >
-                      {copiedShare ? (
-                        <>
-                          <Check size={14} className="stroke-[3px]" />
-                          <span>Nusxalandi!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={14} />
-                          <span>Nusxalash</span>
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setGeneratedShareUrl(null);
-                        setShareTitle('');
-                        setShareContent('');
-                        setShareSender('');
-                      }}
-                      className="px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-xs font-bold text-zinc-400 hover:text-white flex items-center gap-1 transition-all active:scale-95"
-                      title="Yangi havola yaratish"
-                    >
-                      <RotateCcw size={13} />
-                      <span>Qayta</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleCreateShare} className="space-y-2.5 mt-2">
-                  <div className="flex gap-1.5 p-0.5 bg-zinc-950 rounded-lg border border-zinc-850">
-                    {(['text', 'image', 'link'] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => {
-                          setShareType(t);
-                          setShareContent('');
-                        }}
-                        className={`flex-1 py-1 rounded-md text-[10px] font-bold capitalize transition-all ${
-                          shareType === t 
-                            ? 'bg-rose-500 text-black' 
-                            : 'text-gray-400 hover:text-white'
-                        }`}
-                      >
-                        {t === 'text' ? 'Matn' : t === 'image' ? 'Rasm' : 'Havola'}
-                      </button>
-                    ))}
-                  </div>
-
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ulashish sarlavhasi..."
-                    value={shareTitle}
-                    onChange={(e) => setShareTitle(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
-                  />
-
-                  {shareType === 'image' ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-gray-400 font-semibold">Yuklash turi</span>
-                        <div className="flex gap-1 bg-zinc-950 p-0.5 rounded-lg border border-zinc-850">
-                          <button
-                            type="button"
-                            onClick={() => { setShareUploadMode('url'); setShareContent(''); }}
-                            className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
-                              shareUploadMode === 'url' ? 'bg-rose-500 text-black' : 'text-gray-400'
-                            }`}
-                          >
-                            URL
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setShareUploadMode('file'); setShareContent(''); }}
-                            className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
-                              shareUploadMode === 'file' ? 'bg-rose-500 text-black' : 'text-gray-400'
-                            }`}
-                          >
-                            Fayl
-                          </button>
-                        </div>
-                      </div>
-
-                      {shareUploadMode === 'url' ? (
-                        <input
-                          type="url"
-                          required
-                          placeholder="Rasm URL manzili..."
-                          value={shareContent}
-                          onChange={(e) => setShareContent(e.target.value)}
-                          className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
-                        />
-                      ) : (
-                        <div className="relative border border-dashed border-zinc-750 hover:border-rose-500 rounded-lg p-3 bg-zinc-900/40 text-center cursor-pointer group">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleImageFileChange(e, setShareContent)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          />
-                          <div className="flex flex-col items-center justify-center gap-1 pointer-events-none">
-                            <Upload size={14} className="text-gray-400 group-hover:text-rose-450 transition-colors" />
-                            <span className="text-[10px] text-gray-300 font-medium">Rasm faylini tanlang</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {shareContent && (
-                        <div className="relative w-full h-16 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900/50">
-                          <img src={shareContent} alt="Preview" className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => setShareContent('')}
-                            className="absolute top-1 right-1 p-0.5 rounded bg-black/60 hover:bg-black text-gray-300 hover:text-white"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      required
-                      placeholder={shareType === 'link' ? 'https://...' : 'Matn...'}
-                      value={shareContent}
-                      onChange={(e) => setShareContent(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-700 focus:border-rose-500 rounded-lg px-3 py-1.5 text-xs text-white outline-none"
-                    />
-                  )}
-
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      disabled={isSharing || !shareTitle.trim() || !shareContent.trim()}
-                      className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 font-bold text-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
-                    >
-                      {isSharing ? 'Yaratilmoqda...' : <><Send size={12} /> Link Yaratish</>}
-                    </button>
-                    {(shareTitle || shareContent) && (
-                      <button
-                        type="button"
-                        onClick={() => { setShareTitle(''); setShareContent(''); setShareSender(''); }}
-                        className="px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/80 text-gray-300 hover:text-white rounded-xl text-xs flex items-center justify-center gap-1 font-medium transition-all"
-                        title="Tozalash"
-                      >
-                        <RotateCcw size={13} />
-                      </button>
-                    )}
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-
           {/* Card 1: Bu nima qiladi? */}
           <div className="bento-card col-span-12 lg:col-span-6 p-4.5 fade-in flex flex-col justify-between min-h-[130px]">
             <div>
@@ -878,30 +445,30 @@ export default function Home() {
               <div className="flex flex-wrap gap-1.5">
                 <button 
                   onClick={() => saveSurvey({ ...survey, text: !survey.text })}
-                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 cursor-pointer ${
                     survey.text 
                       ? 'bg-amber-500/10 border-amber-500/50 text-amber-400' 
-                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:text-white'
                   }`}
                 >
                   <FileText size={10} /> Matn
                 </button>
                 <button 
                   onClick={() => saveSurvey({ ...survey, image: !survey.image })}
-                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 cursor-pointer ${
                     survey.image 
                       ? 'bg-purple-500/10 border-purple-500/50 text-purple-400' 
-                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:text-white'
                   }`}
                 >
                   <ImageIcon size={10} /> Rasm
                 </button>
                 <button 
                   onClick={() => saveSurvey({ ...survey, link: !survey.link })}
-                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold border transition-all flex items-center gap-1 cursor-pointer ${
                     survey.link 
                       ? 'bg-rose-500/10 border-rose-500/50 text-rose-400' 
-                      : 'bg-zinc-800 border-zinc-700 text-gray-400'
+                      : 'bg-zinc-800 border-zinc-700 text-gray-400 hover:text-white'
                   }`}
                 >
                   <LinkIcon size={10} /> Havola
