@@ -71,6 +71,30 @@ export default function Home() {
   const [sharingItemId, setSharingItemId] = useState<string | null>(null);
   const [copiedItemId, setCopiedItemId] = useState<string | null>(null);
 
+  // Custom Card Copy states
+  const [copiedTextId, setCopiedTextId] = useState<string | null>(null);
+  const [copiedLinkUrlId, setCopiedLinkUrlId] = useState<string | null>(null);
+
+  const handleCopyText = async (item: QaytnomaItem) => {
+    try {
+      await navigator.clipboard.writeText(item.content || '');
+      setCopiedTextId(item.id);
+      setTimeout(() => setCopiedTextId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
+  const handleCopyLinkUrl = async (item: QaytnomaItem) => {
+    try {
+      await navigator.clipboard.writeText(item.content || '');
+      setCopiedLinkUrlId(item.id);
+      setTimeout(() => setCopiedLinkUrlId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
+
   // Edit Modal State
   const [editingItem, setEditingItem] = useState<QaytnomaItem | null>(null);
   const [editForm, setEditForm] = useState({ title: '', content: '', sender: '', image_url: '' });
@@ -516,97 +540,162 @@ export default function Home() {
             {filteredItems.map((item) => (
               <div 
                 key={item.id} 
-                className="bento-card card-highlight relative flex flex-col justify-between p-6 min-h-[200px] transition-all duration-300"
+                className="bento-card card-highlight relative flex flex-col justify-between p-6 min-h-[220px] transition-all duration-300"
                 style={{ '--card-accent': item.color } as React.CSSProperties}
               >
-                {/* Card Header */}
-                <div className="flex justify-between items-start mb-3">
+                {/* Card Header with Management Controls */}
+                <div className="flex justify-between items-start mb-4">
                   <div className="icon-badge" style={{ '--badge-color': item.color, '--badge-bg': `${item.color}15` } as React.CSSProperties}>
                     {renderIcon(item.icon, item.color)}
                   </div>
-                                <div className="flex gap-2">
-                    {/* Download Card Button */}
-                    <button
-                      onClick={() => handleDownloadCard(item)}
-                      className="p-1.5 border border-zinc-700 hover:border-emerald-500 rounded-lg text-gray-400 hover:text-emerald-400 transition-all cursor-pointer"
-                      title="Qaydni yuklab olish"
-                    >
-                      <Download size={14} />
-                    </button>
-
+                  
+                  {/* Common Actions (Share, Edit, Delete) */}
+                  <div className="flex gap-1.5">
                     {/* Share Card Button */}
                     <button
                       onClick={() => handleShareCard(item)}
-                      className={`p-1.5 border rounded-lg transition-all cursor-pointer ${
+                      className={`p-1.5 border rounded-lg transition-all duration-200 cursor-pointer ${
                         copiedItemId === item.id 
                           ? 'bg-emerald-500 border-emerald-500 text-black font-bold' 
-                          : 'bg-zinc-900/80 border-zinc-700 hover:border-rose-500 text-gray-400 hover:text-white'
+                          : 'bg-zinc-900/80 border-zinc-800 hover:border-zinc-500 text-gray-400 hover:text-white'
                       }`}
-                      title={copiedItemId === item.id ? "Nusxalandi!" : "Vercel Share link yaratish va nusxalash"}
+                      title={copiedItemId === item.id ? "Ulashish havolasi nusxalandi!" : "Vercel Share link yaratish va nusxalash"}
                       disabled={sharingItemId === item.id}
                     >
                       {copiedItemId === item.id ? (
-                        <Check size={14} />
+                        <Check size={13} />
                       ) : (
-                        <Share2 size={14} className={sharingItemId === item.id ? 'animate-spin' : ''} />
+                        <Share2 size={13} className={sharingItemId === item.id ? 'animate-spin' : ''} />
                       )}
                     </button>
 
+                    {/* Edit Button */}
                     <button
                       onClick={() => handleOpenEdit(item)}
-                      className="p-1.5 border border-zinc-700 hover:border-blue-500 rounded-lg text-gray-400 hover:text-blue-400 transition-all cursor-pointer"
+                      className="p-1.5 border border-zinc-800 bg-zinc-900/80 hover:border-zinc-500 text-gray-400 hover:text-white rounded-lg transition-all duration-200 cursor-pointer"
                       title="Tahrirlash"
                     >
-                      <Pencil size={14} />
+                      <Pencil size={13} />
                     </button>
+
+                    {/* Delete Button */}
                     <button
                       onClick={() => handleDeleteItem(item.id)}
-                      className="p-1.5 border border-zinc-700 hover:border-rose-500 rounded-lg text-gray-400 hover:text-rose-500 transition-all cursor-pointer"
+                      className="p-1.5 border border-zinc-800 bg-zinc-900/80 hover:border-rose-500/50 text-gray-400 hover:text-rose-400 rounded-lg transition-all duration-200 cursor-pointer"
                       title="O'chirish"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
 
-                {/* Content Body */}
-                <div className="flex-1">
-                  <h3 className="text-base font-bold text-white mb-1.5 line-clamp-1">
-                    {item.title}
-                  </h3>
+                {/* Content Body customized by type */}
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-white mb-2 line-clamp-1">
+                      {item.title}
+                    </h3>
 
-                  {item.type === 'image' && item.image_url && (
-                    <div className="w-full h-32 rounded-lg overflow-hidden my-2 border border-zinc-800 bg-zinc-900">
-                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
-                    </div>
-                  )}
+                    {/* Text specific design */}
+                    {item.type === 'text' && item.content && (
+                      <div className="bg-amber-950/10 border border-amber-500/10 rounded-xl p-3.5 mb-4 hover:border-amber-500/25 transition-colors">
+                        <p className="text-xs text-amber-200/90 leading-relaxed font-mono whitespace-pre-wrap line-clamp-4">
+                          {item.content}
+                        </p>
+                      </div>
+                    )}
 
-                  {item.content && (
-                    <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">
-                      {item.content}
-                    </p>
-                  )}
+                    {/* Image specific design */}
+                    {item.type === 'image' && item.image_url && (
+                      <div className="w-full h-36 rounded-xl overflow-hidden mb-4 border border-purple-500/20 bg-zinc-900/50 group relative">
+                        <img 
+                          src={item.image_url} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2">
+                          <span className="text-[10px] text-white/80 font-medium font-mono truncate">{item.title}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Link specific design */}
+                    {item.type === 'link' && item.content && (
+                      <div className="bg-rose-950/10 border border-rose-500/10 rounded-xl p-3 mb-4 hover:border-rose-500/25 transition-colors flex items-center gap-2">
+                        <div className="p-1.5 bg-rose-500/10 rounded-lg text-rose-400">
+                          <LinkIcon size={12} />
+                        </div>
+                        <span className="text-xs text-rose-300 font-mono truncate flex-1 select-all">
+                          {item.content}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Primary Actions based on type */}
+                  <div className="mt-2 mb-4">
+                    {item.type === 'text' && (
+                      <button
+                        onClick={() => handleCopyText(item)}
+                        className={`w-full py-2 border rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 text-xs font-bold ${
+                          copiedTextId === item.id 
+                            ? 'bg-amber-500 border-amber-500 text-black shadow-lg shadow-amber-500/20' 
+                            : 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500 hover:text-black hover:border-amber-500'
+                        }`}
+                      >
+                        {copiedTextId === item.id ? <Check size={14} /> : <Copy size={14} />}
+                        <span>{copiedTextId === item.id ? 'Nusxalandi!' : 'Matnni nusxalash'}</span>
+                      </button>
+                    )}
+
+                    {item.type === 'image' && (
+                      <button
+                        onClick={() => handleDownloadCard(item)}
+                        className="w-full py-2 border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500 hover:text-black hover:border-purple-500 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 text-xs font-bold shadow-md hover:shadow-purple-500/10"
+                      >
+                        <Download size={14} />
+                        <span>Rasmni yuklab olish</span>
+                      </button>
+                    )}
+
+                    {item.type === 'link' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleCopyLinkUrl(item)}
+                          className={`flex-1 py-2 border rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 text-xs font-bold ${
+                            copiedLinkUrlId === item.id 
+                              ? 'bg-rose-500 border-rose-500 text-black shadow-lg shadow-rose-500/20' 
+                              : 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-black hover:border-rose-500'
+                          }`}
+                        >
+                          {copiedLinkUrlId === item.id ? <Check size={14} /> : <Copy size={14} />}
+                          <span>{copiedLinkUrlId === item.id ? 'Nusxalandi!' : 'Nusxalash'}</span>
+                        </button>
+                        <a
+                          href={item.content?.startsWith('http') ? item.content : `https://${item.content}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 py-2 border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-black hover:border-rose-500 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 text-xs font-bold text-center cursor-pointer shadow-md hover:shadow-rose-500/10"
+                        >
+                          <ExternalLink size={14} />
+                          <span>O'tish</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Footer */}
-                <div className="mt-4 flex justify-between items-center text-[10px] text-gray-500 border-t border-zinc-900 pt-3">
+                {/* Card Footer */}
+                <div className="mt-2 flex justify-between items-center text-[10px] text-gray-500 border-t border-zinc-900 pt-3">
                   <div className="flex items-center gap-1">
                     <User size={10} style={{ color: item.color }} />
                     <span className="font-semibold text-gray-400">{item.sender || 'Anonim'}</span>
                     <span className="mx-1">•</span>
                     <span>{new Date(item.created_at).toLocaleDateString()}</span>
                   </div>
-                  
-                  {item.type === 'link' && item.content && (
-                    <a 
-                      href={item.content.startsWith('http') ? item.content : `https://${item.content}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="flex items-center gap-1 hover:text-white font-medium transition-colors"
-                    >
-                      O'tish <ExternalLink size={10} />
-                    </a>
-                  )}
+                  <span className="text-[9px] uppercase tracking-widest font-bold opacity-80" style={{ color: item.color }}>
+                    {item.type === 'text' ? 'Matn' : item.type === 'image' ? 'Rasm' : 'Havola'}
+                  </span>
                 </div>
 
               </div>
