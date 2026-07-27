@@ -75,8 +75,9 @@ export default function AddNotePage() {
       if (error) throw error;
 
       window.location.href = '/';
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error adding item:', err);
+      alert('Xatolik yuz berdi: ' + (err.message || String(err)));
     } finally {
       setIsSubmitting(false);
     }

@@ -217,30 +217,65 @@ export default function Home() {
     }
   };
 
-  const handleDownloadCard = (item: QaytnomaItem) => {
-    let text = `SARLAVHA: ${item.title}\n`;
-    text += `Tur: ${item.type.toUpperCase()}\n`;
-    text += `Yuboruvchi: ${item.sender || 'Anonim'}\n`;
-    text += `Sana: ${new Date(item.created_at).toLocaleString()}\n`;
-    if (item.type === 'image' && item.image_url) {
-      text += `Rasm URL: ${item.image_url}\n`;
-    }
-    if (item.content) {
-      text += `Mazmuni:\n${item.content}\n`;
-    }
+  const handleDownloadCard = async (item: QaytnomaItem) => {
+    const cleanFileName = item.title.replace(/[/\\?%*:|"<>]/g, '-'); // sanitize filename
     
-    if (item.type === 'image' && item.image_url && item.image_url.startsWith('data:image/')) {
+    if (item.type === 'image' && item.image_url) {
+      if (item.image_url.startsWith('data:image/')) {
+        const ext = item.image_url.substring("data:image/".length, item.image_url.indexOf(";base64")) || 'png';
+        const a = document.createElement('a');
+        a.href = item.image_url;
+        a.download = `${cleanFileName}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        try {
+          const res = await fetch(item.image_url, { mode: 'cors' });
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = `${cleanFileName}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+          console.error("CORS fetch failed, opening in new tab:", err);
+          window.open(item.image_url, '_blank');
+        }
+      }
+    } else if (item.type === 'link' && item.content) {
+      const targetUrl = item.content.startsWith('http') ? item.content : `https://${item.content}`;
+      const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting to ${item.title}</title>
+  <meta http-equiv="refresh" content="0; url=${targetUrl}">
+  <script>
+    window.location.href = "${targetUrl}";
+  </script>
+</head>
+<body>
+  <p>Redirecting to <a href="${targetUrl}">${item.title}</a>...</p>
+</body>
+</html>`;
+      const dataStr = "data:text/html;charset=utf-8," + encodeURIComponent(htmlContent);
       const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", item.image_url);
-      downloadAnchor.setAttribute("download", `${item.title || 'rasm'}.png`);
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `${cleanFileName}.html`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
     } else {
-      const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+      // For text notes, download the content directly as text file
+      const textContent = item.content || item.title || '';
+      const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(textContent);
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `${item.title}.txt`);
+      downloadAnchor.setAttribute("download", `${cleanFileName}.txt`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
