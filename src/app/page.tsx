@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import NetworkBackground from '@/components/NetworkBackground';
+import JSZip from 'jszip';
 import { 
   FileText, 
   Image as ImageIcon, 
@@ -221,30 +222,94 @@ export default function Home() {
     const cleanFileName = item.title.replace(/[/\\?%*:|"<>]/g, '-'); // sanitize filename
     
     if (item.type === 'image' && item.image_url) {
-      if (item.image_url.startsWith('data:image/')) {
-        const ext = item.image_url.substring("data:image/".length, item.image_url.indexOf(";base64")) || 'png';
+      try {
+        const zip = new JSZip();
+
+        // 1. Prepare metadata text content
+        let text = `SARLAVHA: ${item.title}\n`;
+        text += `Tur: RASM\n`;
+        text += `Yuboruvchi: ${item.sender || 'Anonim'}\n`;
+        text += `Sana: ${new Date(item.created_at).toLocaleString('uz-UZ')}\n`;
+        if (item.content) {
+          text += `Mazmuni:\n${item.content}\n`;
+        }
+
+        // Add text to ZIP
+        zip.file(`${cleanFileName}-ma'lumotlari.txt`, text);
+
+        // 2. Fetch and add the image to ZIP
+        if (item.image_url.startsWith('data:image/')) {
+          const parts = item.image_url.split(',');
+          const base64Data = parts[1];
+          const mimeType = parts[0].split(';')[0].split(':')[1];
+          const ext = mimeType.split('/')[1] || 'png';
+          zip.file(`${cleanFileName}.${ext}`, base64Data, { base64: true });
+        } else {
+          // Fetch remote image
+          const res = await fetch(item.image_url, { mode: 'cors' });
+          if (!res.ok) throw new Error('Image fetch failed');
+          const blob = await res.blob();
+          const contentType = res.headers.get('Content-Type') || 'image/png';
+          const ext = contentType.split('/')[1] || 'png';
+          zip.file(`${cleanFileName}.${ext}`, blob);
+        }
+
+        // 3. Generate and download ZIP file
+        const contentBlob = await zip.generateAsync({ type: 'blob' });
+        const blobUrl = URL.createObjectURL(contentBlob);
         const a = document.createElement('a');
-        a.href = item.image_url;
-        a.download = `${cleanFileName}.${ext}`;
+        a.href = blobUrl;
+        a.download = `${cleanFileName}.zip`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-      } else {
-        try {
-          const res = await fetch(item.image_url, { mode: 'cors' });
-          const blob = await res.blob();
-          const blobUrl = URL.createObjectURL(blob);
+        URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        console.error("ZIP creation failed, falling back to separate files:", err);
+        
+        // Fallback to separate files if anything fails
+        // Image Download
+        if (item.image_url.startsWith('data:image/')) {
+          const ext = item.image_url.substring("data:image/".length, item.image_url.indexOf(";base64")) || 'png';
           const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = `${cleanFileName}.png`;
+          a.href = item.image_url;
+          a.download = `${cleanFileName}.${ext}`;
           document.body.appendChild(a);
           a.click();
           a.remove();
-          URL.revokeObjectURL(blobUrl);
-        } catch (err) {
-          console.error("CORS fetch failed, opening in new tab:", err);
-          window.open(item.image_url, '_blank');
+        } else {
+          try {
+            const res = await fetch(item.image_url, { mode: 'cors' });
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `${cleanFileName}.png`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+          } catch (corsErr) {
+            console.error("CORS fetch failed, opening in new tab:", corsErr);
+            window.open(item.image_url, '_blank');
+          }
         }
+
+        // Text Download
+        let text = `SARLAVHA: ${item.title}\n`;
+        text += `Tur: RASM\n`;
+        text += `Yuboruvchi: ${item.sender || 'Anonim'}\n`;
+        text += `Sana: ${new Date(item.created_at).toLocaleString()}\n`;
+        if (item.content) {
+          text += `Mazmuni:\n${item.content}\n`;
+        }
+        const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `${cleanFileName}-ma'lumotlari.txt`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
       }
     } else if (item.type === 'link' && item.content) {
       const targetUrl = item.content.startsWith('http') ? item.content : `https://${item.content}`;
