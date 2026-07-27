@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import NetworkBackground from '@/components/NetworkBackground';
-import JSZip from 'jszip';
 import { 
   FileText, 
   Image as ImageIcon, 
@@ -219,249 +218,48 @@ export default function Home() {
   };
 
   const handleDownloadCard = async (item: QaytnomaItem) => {
-    let fileNameSource = item.title || item.content || 'qayd';
-    if (fileNameSource.length > 50) {
-      fileNameSource = fileNameSource.substring(0, 50);
-    }
-    const cleanFileName = fileNameSource.replace(/[/\\?%*:|"<>]/g, '-').trim(); // sanitize filename
+    const cleanFileName = item.title.replace(/[/\\?%*:|"<>]/g, '-'); // sanitize filename
     
     if (item.type === 'image' && item.image_url) {
-      // Convert image to base64 Data URL to make the HTML self-contained/offline-friendly
-      let finalImageUrl = item.image_url;
-      if (!item.image_url.startsWith('data:')) {
+      if (item.image_url.startsWith('data:image/')) {
+        const ext = item.image_url.substring("data:image/".length, item.image_url.indexOf(";base64")) || 'png';
+        const a = document.createElement('a');
+        a.href = item.image_url;
+        a.download = `${cleanFileName}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
         try {
           const res = await fetch(item.image_url, { mode: 'cors' });
-          if (res.ok) {
-            const blob = await res.blob();
-            finalImageUrl = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
-          }
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = `${cleanFileName}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(blobUrl);
         } catch (err) {
-          console.error("Failed to convert image to base64, using original URL:", err);
+          console.error("CORS fetch failed, opening in new tab:", err);
+          window.open(item.image_url, '_blank');
         }
       }
-
-      const htmlContent = `<!DOCTYPE html>
-<html lang="uz">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${item.title || 'Qaydnoma'}</title>
-  <style>
-    body {
-      background-color: #09090b;
-      color: #fafafa;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .card {
-      background-color: #18181b;
-      border: 1px solid #27272a;
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 500px;
-      width: 100%;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-      position: relative;
-      overflow: hidden;
-    }
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: ${item.color || '#a855f7'};
-    }
-    .title {
-      font-size: 20px;
-      font-weight: 800;
-      margin-top: 8px;
-      margin-bottom: 16px;
-      color: #ffffff;
-    }
-    .image-container {
-      width: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 16px;
-      border: 1px solid #27272a;
-      background-color: #09090b;
-    }
-    .image-container img {
-      width: 100%;
-      display: block;
-      height: auto;
-      max-height: 450px;
-      object-fit: contain;
-    }
-    .content {
-      font-size: 14px;
-      color: #a1a1aa;
-      line-height: 1.6;
-      margin-bottom: 20px;
-      white-space: pre-wrap;
-    }
-    .footer {
-      border-top: 1px solid #27272a;
-      padding-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: #71717a;
-    }
-    .sender {
-      font-weight: 600;
-      color: #e4e4e7;
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="title">${item.title || 'Rasmli Qayd'}</div>
-    <div class="image-container">
-      <img src="${finalImageUrl}" alt="${item.title || 'Qayd rasmi'}" />
-    </div>
-    ${item.content ? `<div class="content">${item.content}</div>` : ''}
-    <div class="footer">
-      <div>Yuboruvchi: <span class="sender">${item.sender || 'Anonim'}</span></div>
-      <div>${new Date(item.created_at).toLocaleDateString('uz-UZ')}</div>
-    </div>
-  </div>
-</body>
-</html>`;
-
-      const dataStr = "data:text/html;charset=utf-8," + encodeURIComponent(htmlContent);
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `${cleanFileName}.html`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
     } else if (item.type === 'link' && item.content) {
       const targetUrl = item.content.startsWith('http') ? item.content : `https://${item.content}`;
       const htmlContent = `<!DOCTYPE html>
-<html lang="uz">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${item.title || 'Havola Qayd'}</title>
-  <style>
-    body {
-      background-color: #09090b;
-      color: #fafafa;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    .card {
-      background-color: #18181b;
-      border: 1px solid #27272a;
-      border-radius: 16px;
-      padding: 24px;
-      max-width: 500px;
-      width: 100%;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
-      position: relative;
-      overflow: hidden;
-    }
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: ${item.color || '#f43f5e'};
-    }
-    .title {
-      font-size: 20px;
-      font-weight: 800;
-      margin-top: 8px;
-      margin-bottom: 16px;
-      color: #ffffff;
-    }
-    .link-container {
-      background-color: rgba(244, 63, 94, 0.05);
-      border: 1px solid rgba(244, 63, 94, 0.2);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      text-align: center;
-    }
-    .url {
-      font-size: 14px;
-      font-weight: 600;
-      color: #f43f5e;
-      word-break: break-all;
-      text-decoration: none;
-    }
-    .url:hover {
-      text-decoration: underline;
-    }
-    .btn-visit {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #f43f5e;
-      color: #ffffff;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: background-color 0.2s;
-    }
-    .btn-visit:hover {
-      background-color: #e11d48;
-    }
-    .footer {
-      border-top: 1px solid #27272a;
-      padding-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      color: #71717a;
-    }
-    .sender {
-      font-weight: 600;
-      color: #e4e4e7;
-    }
-  </style>
+  <meta charset="utf-8">
+  <title>Redirecting to ${item.title}</title>
+  <meta http-equiv="refresh" content="0; url=${targetUrl}">
+  <script>
+    window.location.href = "${targetUrl}";
+  </script>
 </head>
 <body>
-  <div class="card">
-    <div class="title">${item.title || 'Havola Qayd'}</div>
-    <div class="link-container">
-      <a href="${targetUrl}" class="url" target="_blank" rel="noopener noreferrer">${item.content}</a>
-      <a href="${targetUrl}" class="btn-visit" target="_blank" rel="noopener noreferrer">Saytga o'tish →</a>
-    </div>
-    <div class="footer">
-      <div>Yuboruvchi: <span class="sender">${item.sender || 'Anonim'}</span></div>
-      <div>${new Date(item.created_at).toLocaleDateString('uz-UZ')}</div>
-    </div>
-  </div>
+  <p>Redirecting to <a href="${targetUrl}">${item.title}</a>...</p>
 </body>
 </html>`;
       const dataStr = "data:text/html;charset=utf-8," + encodeURIComponent(htmlContent);
