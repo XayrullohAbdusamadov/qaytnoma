@@ -424,16 +424,6 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
-            <button
-              onClick={handleCopyLink}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white bg-zinc-900/80 border border-zinc-700/80 hover:border-zinc-500 transition-all flex items-center gap-1.5 cursor-pointer"
-              title="Sahifa havolasini nusxalash"
-            >
-              {copiedLink ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-              <span>{copiedLink ? 'Nusxalandi!' : 'Linkni Saqlash'}</span>
-            </button>
-          </div>
         </div>
 
         {/* Bento Grid Layout (Symmetric Info and Filter Row) */}
