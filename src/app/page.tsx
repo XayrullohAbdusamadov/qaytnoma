@@ -75,6 +75,9 @@ export default function Home() {
   const [copiedTextId, setCopiedTextId] = useState<string | null>(null);
   const [copiedLinkUrlId, setCopiedLinkUrlId] = useState<string | null>(null);
 
+  // Selected Image for Lightbox modal
+  const [selectedImage, setSelectedImage] = useState<{ url: string; title: string } | null>(null);
+
   const handleCopyText = async (item: QaytnomaItem) => {
     try {
       await navigator.clipboard.writeText(item.content || '');
@@ -607,7 +610,11 @@ export default function Home() {
 
                     {/* Image specific design */}
                     {item.type === 'image' && item.image_url && (
-                      <div className="w-full h-36 rounded-xl overflow-hidden mb-4 border border-purple-500/20 bg-zinc-900/50 group relative">
+                      <div 
+                        onClick={() => setSelectedImage({ url: item.image_url!, title: item.title })}
+                        className="w-full h-36 rounded-xl overflow-hidden mb-4 border border-purple-500/20 bg-zinc-900/50 group relative cursor-zoom-in"
+                        title="Rasmni kattalashtirib ko'rish"
+                      >
                         <img 
                           src={item.image_url} 
                           alt={item.title} 
@@ -870,6 +877,78 @@ export default function Home() {
                 {isSavingEdit ? 'Saqlanmoqda...' : 'Saqlash'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Lightbox Modal */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/95 backdrop-blur-md transition-all duration-300 animate-fadeIn"
+          onClick={() => setSelectedImage(null)}
+        >
+          {/* Controls Bar */}
+          <div className="absolute top-4 right-4 flex items-center gap-3 z-10" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={async () => {
+                const cleanFileName = selectedImage.title.replace(/[/\\?%*:|"<>]/g, '-');
+                if (selectedImage.url.startsWith('data:image/')) {
+                  const ext = selectedImage.url.substring("data:image/".length, selectedImage.url.indexOf(";base64")) || 'png';
+                  const a = document.createElement('a');
+                  a.href = selectedImage.url;
+                  a.download = `${cleanFileName}.${ext}`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                } else {
+                  try {
+                    const res = await fetch(selectedImage.url, { mode: 'cors' });
+                    const blob = await res.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = `${cleanFileName}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(blobUrl);
+                  } catch (err) {
+                    console.error("CORS fetch failed, opening in new tab:", err);
+                    window.open(selectedImage.url, '_blank');
+                  }
+                }
+              }}
+              className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-purple-500 text-gray-400 hover:text-purple-400 transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer shadow-lg"
+              title="Yuklab olish"
+            >
+              <Download size={16} />
+              <span className="hidden sm:inline">Yuklab olish</span>
+            </button>
+            
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-500 text-gray-400 hover:text-white transition-all cursor-pointer shadow-lg"
+              title="Yopish"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Title bar at the bottom */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-zinc-900/90 border border-zinc-800/80 px-6 py-2.5 rounded-2xl shadow-2xl backdrop-blur-md z-10 max-w-xs sm:max-w-md text-center" onClick={(e) => e.stopPropagation()}>
+            <p className="text-xs font-bold text-white font-mono truncate">{selectedImage.title}</p>
+          </div>
+
+          {/* Image container */}
+          <div 
+            className="relative max-w-4xl max-h-[80vh] flex items-center justify-center pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.title}
+              className="max-h-[75vh] max-w-full rounded-xl object-contain border border-purple-500/20 shadow-2xl shadow-purple-500/5 select-none"
+            />
           </div>
         </div>
       )}
