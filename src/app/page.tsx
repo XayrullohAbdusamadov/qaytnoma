@@ -386,8 +386,8 @@ export default function Home() {
       {/* Main Container */}
       <main className="max-w-7xl mx-auto pt-8">
         
-        {/* Header Block with Vercel Badge */}
-        <header className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 fade-in">
+        {/* Header Block */}
+        <header className="mb-8 fade-in">
           <div>
             <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-white flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 via-purple-500 to-amber-500 p-0.5 shadow-lg shadow-rose-500/20">
@@ -400,34 +400,6 @@ export default function Home() {
             <p className="text-gray-400 max-w-xl text-sm">
               Bento uslubidagi zamonaviy eslatmalar va qaydlar daftari. Real-time saqlash va linklar ulashish tizimi.
             </p>
-          </div>
-
-          {/* Vercel Live Link Block */}
-          <div className="bg-zinc-900/80 border border-zinc-700/80 hover:border-emerald-500/50 rounded-2xl p-4 flex items-center gap-3 shadow-xl backdrop-blur-xl transition-all duration-300">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold shadow-inner">
-              ▲
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#10b981]"></span>
-                <span className="text-[10px] font-bold tracking-wider text-emerald-400 uppercase">Vercel Live</span>
-              </div>
-              <a
-                href={vercelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-mono font-semibold text-white hover:text-emerald-400 transition-colors flex items-center gap-1"
-              >
-                qaydnoma-six.vercel.app <ExternalLink size={11} />
-              </a>
-            </div>
-            <button
-              onClick={copyVercelLink}
-              className="p-2 rounded-xl bg-zinc-800/80 hover:bg-emerald-500 hover:text-black text-gray-300 transition-all text-xs flex items-center gap-1 border border-zinc-700/80 font-semibold"
-              title="Vercel linkini nusxalash"
-            >
-              {copiedVercel ? <Check size={14} className="text-black" /> : <Copy size={14} />}
-            </button>
           </div>
         </header>
 
