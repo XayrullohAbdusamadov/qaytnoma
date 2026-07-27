@@ -74,7 +74,7 @@ export default function AddNotePage() {
 
       if (error) throw error;
 
-      router.push('/');
+      window.location.href = '/';
     } catch (err) {
       console.error('Error adding item:', err);
     } finally {

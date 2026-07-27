@@ -217,36 +217,34 @@ export default function Home() {
     }
   };
 
-  const handleDownloadNotes = () => {
-    if (items.length === 0) {
-      alert("Yuklab olish uchun qaydlar mavjud emas.");
-      return;
+  const handleDownloadCard = (item: QaytnomaItem) => {
+    let text = `SARLAVHA: ${item.title}\n`;
+    text += `Tur: ${item.type.toUpperCase()}\n`;
+    text += `Yuboruvchi: ${item.sender || 'Anonim'}\n`;
+    text += `Sana: ${new Date(item.created_at).toLocaleString()}\n`;
+    if (item.type === 'image' && item.image_url) {
+      text += `Rasm URL: ${item.image_url}\n`;
+    }
+    if (item.content) {
+      text += `Mazmuni:\n${item.content}\n`;
     }
     
-    let text = "QAYDNOMA - SAQLANGAN QAYDLAR\n";
-    text += `Sana: ${new Date().toLocaleString()}\n`;
-    text += "=========================================\n\n";
-    
-    items.forEach((item, index) => {
-      text += `${index + 1}. [${item.type.toUpperCase()}] ${item.title}\n`;
-      text += `Yuboruvchi: ${item.sender || 'Anonim'}\n`;
-      text += `Yaratilgan vaqt: ${new Date(item.created_at).toLocaleString()}\n`;
-      if (item.type === 'image' && item.image_url) {
-        text += `Rasm URL: ${item.image_url}\n`;
-      }
-      if (item.content) {
-        text += `Mazmuni: ${item.content}\n`;
-      }
-      text += "-----------------------------------------\n\n";
-    });
-    
-    const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", "qaydlar.txt");
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    if (item.type === 'image' && item.image_url && item.image_url.startsWith('data:image/')) {
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", item.image_url);
+      downloadAnchor.setAttribute("download", `${item.title || 'rasm'}.png`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } else {
+      const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `${item.title}.txt`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
   };
 
   // Delete Item
@@ -376,7 +374,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-2.5">
             <Link
               href="/add"
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-black bg-gradient-to-tr from-amber-500 via-purple-500 to-rose-500 hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl text-xs font-bold text-black bg-amber-500 hover:bg-amber-600 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-amber-500/10 flex items-center gap-1.5 cursor-pointer"
             >
               <Plus size={16} />
               <span>Yangi Qayd Qo'shish</span>
@@ -392,15 +390,6 @@ export default function Home() {
           </div>
 
           <div className="flex flex-wrap gap-2.5">
-            <button
-              onClick={handleDownloadNotes}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white bg-zinc-900/80 border border-zinc-700/80 hover:border-zinc-500 transition-all flex items-center gap-1.5 cursor-pointer"
-              title="Qaydlarni .txt fayl sifatida yuklab olish"
-            >
-              <Download size={14} />
-              <span>Yuklab Olish</span>
-            </button>
-
             <button
               onClick={handleCopyLink}
               className="px-4 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white bg-zinc-900/80 border border-zinc-700/80 hover:border-zinc-500 transition-all flex items-center gap-1.5 cursor-pointer"
@@ -510,42 +499,44 @@ export default function Home() {
                   <div className="icon-badge" style={{ '--badge-color': item.color, '--badge-bg': `${item.color}15` } as React.CSSProperties}>
                     {renderIcon(item.icon, item.color)}
                   </div>
-                  
-                  <div className="flex gap-2">
+                                <div className="flex gap-2">
+                    {/* Download Card Button */}
+                    <button
+                      onClick={() => handleDownloadCard(item)}
+                      className="p-1.5 border border-zinc-700 hover:border-emerald-500 rounded-lg text-gray-400 hover:text-emerald-400 transition-all cursor-pointer"
+                      title="Qaydni yuklab olish"
+                    >
+                      <Download size={14} />
+                    </button>
+
                     {/* Share Card Button */}
                     <button
                       onClick={() => handleShareCard(item)}
-                      className={`px-2.5 py-1 border rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                      className={`p-1.5 border rounded-lg transition-all cursor-pointer ${
                         copiedItemId === item.id 
                           ? 'bg-emerald-500 border-emerald-500 text-black font-bold' 
-                          : 'bg-zinc-900/80 border-zinc-700 hover:border-rose-500 text-gray-300 hover:text-white'
+                          : 'bg-zinc-900/80 border-zinc-700 hover:border-rose-500 text-gray-400 hover:text-white'
                       }`}
                       title={copiedItemId === item.id ? "Nusxalandi!" : "Vercel Share link yaratish va nusxalash"}
                       disabled={sharingItemId === item.id}
                     >
                       {copiedItemId === item.id ? (
-                        <>
-                          <Check size={12} />
-                          <span>Nusxalandi!</span>
-                        </>
+                        <Check size={14} />
                       ) : (
-                        <>
-                          <Share2 size={12} className={sharingItemId === item.id ? 'animate-spin' : ''} />
-                          <span>Link olish</span>
-                        </>
+                        <Share2 size={14} className={sharingItemId === item.id ? 'animate-spin' : ''} />
                       )}
                     </button>
 
                     <button
                       onClick={() => handleOpenEdit(item)}
-                      className="p-1.5 border border-zinc-700 hover:border-blue-500 rounded-lg text-gray-400 hover:text-blue-400 transition-all"
+                      className="p-1.5 border border-zinc-700 hover:border-blue-500 rounded-lg text-gray-400 hover:text-blue-400 transition-all cursor-pointer"
                       title="Tahrirlash"
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => handleDeleteItem(item.id)}
-                      className="p-1.5 border border-zinc-700 hover:border-rose-500 rounded-lg text-gray-400 hover:text-rose-500 transition-all"
+                      className="p-1.5 border border-zinc-700 hover:border-rose-500 rounded-lg text-gray-400 hover:text-rose-500 transition-all cursor-pointer"
                       title="O'chirish"
                     >
                       <Trash2 size={14} />
